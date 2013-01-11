@@ -16,7 +16,7 @@ trait MultiJvmTestBarrier {
    */
   def barrier[C](c: C, name: String) = {
     if (create(name)) {
-      // We created it (and before it did not exist) so it's up for the other end to delete it
+      // We created it (and before, it did not exist) so it's up for the other end to delete it
       println("Waiting at barrier '" + name + " (in " + c.getClass.getSimpleName + ")")
       waitUntil(!exists(name))
     } else {

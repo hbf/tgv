@@ -24,6 +24,7 @@ object TgvBuild extends Build {
         EclipseKeys.withSource := true,
         EclipseKeys.configurations := Set(Compile, Test, MultiJvm),
         resolvers += "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
+        resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/repo",
         // See https://groups.google.com/forum/?fromgroups=#!topic/scalatest-users/vg0xrVC5jxU
         testOptions <+= (target in Test) map {
           t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports"))
@@ -69,7 +70,7 @@ object TgvBuild extends Build {
     val rocoto                 = "org.99soft.guice"            % "rocoto"                               % "6.1"
 
     //========================== Akka ===================================================================================================================================
-    val iteratees              = "play"                        % "play-iteratees_2.10"                  % "2.1-RC1"
+    val iteratees              = "play"                        % "play-iteratees_2.10"                  % "2.1-RC2"
     
     //========================== Caching ================================================================================================================================  
   

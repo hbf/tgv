@@ -5,9 +5,9 @@ import org.scalatest.mock.MockitoSugar.mock
 import nu.rinu.test.{ HttpServer, HttpServerHandler, Response }
 import scala.io.Source
 // FIXME
-//import com.dreizak.tgv.infrastructure.transport.http.HttpTransportDefinition
-//import com.dreizak.tgv.infrastructure.transport.Transport
-//import com.dreizak.tgv.infrastructure.transport.http.transform.UrlTransform.transformUrl
+//import com.dreizak.tgv.transport.http.HttpTransportDefinition
+//import com.dreizak.tgv.transport.Transport
+//import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
 
 /**
  * Mixin for ScalaTest `Suite`s that provides a HTTP server, running on a free local port,

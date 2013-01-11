@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 import scala.util.{ Failure, Success, Try }
 import scala.util.control.NonFatal
 
-import com.dreizak.tgv.infrastructure.concurrency.SchedulingContext
+import com.dreizak.tgv.SchedulingContext
 
 /**
  * A Scala future that is cancellable.

@@ -1,4 +1,4 @@
-package com.dreizak.tgv.infrastructure.concurrency
+package com.dreizak.tgv
 
 import com.dreizak.util.service.Service
 import scala.concurrent.ExecutionContextExecutorService

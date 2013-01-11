@@ -1,4 +1,4 @@
-package com.dreizak.tgv.infrastructure.transport.throttle
+package com.dreizak.tgv.transport.throttle
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration._
@@ -8,8 +8,8 @@ import scala.concurrent.duration._
  *
  * @param numberOfTasks the number of tasks that may take place in a period
  * @param duration the length of the period
- * @see [[com.dreizak.tgv.infrastructure.transport.Transport]]
- * @see [[com.dreizak.tgv.infrastructure.transport.throttle.RateController]]
+ * @see [[com.dreizak.tgv.transport.Transport]]
+ * @see [[com.dreizak.tgv.transport.throttle.RateController]]
  */
 case class Rate(val numberOfTasks: Int, val duration: FiniteDuration) {
   def durationInMillis(): Long = duration.toMillis

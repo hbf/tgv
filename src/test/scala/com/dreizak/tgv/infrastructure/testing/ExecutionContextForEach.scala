@@ -4,7 +4,7 @@ import scala.concurrent.duration.DurationInt
 
 import org.scalatest.{ BeforeAndAfterEach, Suite }
 
-import com.dreizak.tgv.infrastructure.concurrency.{ ExecutionContextService, SchedulingContext }
+import com.dreizak.tgv.{ ExecutionContextService, SchedulingContext }
 
 trait ExecutionContextForEach extends BeforeAndAfterEach {
   self: Suite =>

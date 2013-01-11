@@ -4,7 +4,7 @@ package com.dreizak.util.concurrent
  * Thrown when a [[com.dreizak.util.concurrent.Cancellable]] that has been `cancel`'d
  * is acted upon.
  *
- * For example, when a [[com.dreizak.tgv.infrastructure.transport.Transport]] processes a request
+ * For example, when a [[com.dreizak.tgv.transport.Transport]] processes a request
  * for which its `CancellationManager` reports that it has been cancelled, the result of the computation
  * is a `CancelledException`.
  */

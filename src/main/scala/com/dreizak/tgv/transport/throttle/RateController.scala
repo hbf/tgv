@@ -1,4 +1,4 @@
-package com.dreizak.tgv.infrastructure.transport.throttle
+package com.dreizak.tgv.transport.throttle
 
 import java.util.concurrent.{ ScheduledExecutorService, TimeUnit }
 import scala.annotation.implicitNotFound
@@ -23,7 +23,7 @@ import com.dreizak.util.concurrent.CancellableFuture.cancellable
  * <em>Example:</em> You need to call an external web-service <i>S</i> that may only be called 5 times in 2
  * seconds. Here, the HTTP request to <i>S</i> is the task at hand. To be on the safe side, we define the task to
  * start <i>before</i> you make the actual request and end <i>after</i> you receive the entire response (and not
- * after you sent the request!). In this way, since [[com.dreizak.tgv.infrastructure.transport.throttle.RateController]] ensures that our tasks are
+ * after you sent the request!). In this way, since [[com.dreizak.tgv.transport.throttle.RateController]] ensures that our tasks are
  * not executed more than 5 times in 2 seconds, we are sure to not call the web service too
  * frequently.
  *
@@ -261,8 +261,8 @@ final class RateController(rate: Rate,
 
   /**
    * Determines the earliest possible start time for a next task to be scheduled
-   * and returns a new [[com.dreizak.tgv.infrastructure.transport.throttle.Receipt]] instance for this time.
-   * Note that this method adds the returned [[com.dreizak.tgv.infrastructure.transport.throttle.Receipt]] instance to
+   * and returns a new [[com.dreizak.tgv.transport.throttle.Receipt]] instance for this time.
+   * Note that this method adds the returned [[com.dreizak.tgv.transport.throttle.Receipt]] instance to
    * the task `schedule`.
    *
    * The method assumes that less than `rate.numberOfCalls` tasks are outstanding.
@@ -410,7 +410,7 @@ final class RateController(rate: Rate,
    *
    * Call the method `completed` to signal that the task has ended.
    *
-   * @see [[com.dreizak.tgv.infrastructure.transport.throttle.RateController]]
+   * @see [[com.dreizak.tgv.transport.throttle.RateController]]
    */
   final case class Receipt private[throttle] (private[throttle] val startTime: Long,
                                               private[throttle] var endTime: Long = Long.MaxValue) {
@@ -461,7 +461,7 @@ object RateController {
   }
 
   /**
-   * A [[com.dreizak.tgv.infrastructure.transport.throttle.RateController.Scheduler]] that uses a
+   * A [[com.dreizak.tgv.transport.throttle.RateController.Scheduler]] that uses a
    * Java `ScheduledExecutorService` to schedule tasks.
    */
   class DefaultScheduler(implicit scheduler: ScheduledExecutorService) extends Scheduler {
