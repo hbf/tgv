@@ -1,4 +1,4 @@
-package com.dreizak.deepar.infrastructure.transport.http
+package com.dreizak.tgv.transport.http
 
 import com.dreizak.tgv.transport.{ Transport, TransportDefinition, TransportHeaderError }
 import com.dreizak.tgv.transport.http.sonatype.iteratee.ResponseHeaders
@@ -16,7 +16,7 @@ trait HttpTransportDefinition extends TransportDefinition {
 }
 
 /**
- * A [[com.dreizak.deepar.infrastructure.transport.Transport]] for the HTTP protocol.
+ * A [[com.dreizak.tgv.transport.Transport]] for the HTTP protocol.
  *
  * == Creating requests ==
  * Use the `getBuilder`, `postBuilder`, etc. methods to start building a request. You can use `requestBuilder(r)` to create

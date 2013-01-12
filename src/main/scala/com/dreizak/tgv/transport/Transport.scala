@@ -6,6 +6,8 @@ import com.dreizak.util.concurrent.CancellableFuture
 import play.api.libs.iteratee.Iteratee
 import com.dreizak.util.concurrent.Cancellable
 import play.api.libs.iteratee.Enumerator
+import com.dreizak.tgv.transport.retry.RetryStrategy
+import com.dreizak.tgv.transport.retry.BackoffStrategy
 
 /**
  * An exception thrown by a [[com.dreizak.tgv.transport.Transport]] in case the response headers
@@ -21,6 +23,24 @@ trait TransportHeaderError extends Exception {
   //  def failingResponse: Resp // FIXME
 }
 
+trait TransportRequest[Headers] {
+  /**
+   * The default retry strategy.
+   *
+   * If a request does not specify its own retry strategy (see FIXME), the strategy returned by this method
+   * will be used.
+   */
+  def backoffStrategy: Option[BackoffStrategy]
+
+  /**
+   * The default retry tester.
+   *
+   * If a request does not specify its own retry tester (see FIXME), the tester returned by this method
+   * will be used.
+   */
+  def retryStrategy: Option[RetryStrategy[Headers]]
+}
+
 /**
  * Defines the request and response headers types of a [[com.dreizak.tgv.transport.Transport]] implementation,
  * including the type of the exceptions thrown when a header indicates an error.
@@ -28,7 +48,7 @@ trait TransportHeaderError extends Exception {
  * @see [[com.dreizak.tgv.transport.Transport]]
  */
 trait TransportDefinition {
-  type Req
+  type Req <: TransportRequest[Headers]
   type Headers
   type HeaderError <: TransportHeaderError
 
@@ -142,6 +162,10 @@ trait Client[Def <: TransportDefinition] {
  * `submit` to obtain a response and finally transforms the response.
  *
  * == Failures and retrying ==
+ *
+ * FIXME: retry can be requested during header inspection or at anytime before the request has finished
+ * by throwing TODO
+ *
  * A transport uses an underlying client to produce responses from requests. In doing so, two kinds of
  * errors can happen:
  *
@@ -195,7 +219,23 @@ trait Transport[Def <: TransportDefinition] extends Client[Def] {
   protected val handler: Client[Def]
   protected def create(handler: Client[Def]): Self
 
-  //def defaultRetryOracle: RetryOracle[Def]
+  //def defaultRetryOracle: RetryOracle[Def] // FIXME
+
+  /**
+   * The default retry strategy.
+   *
+   * If a request does not specify its own retry strategy (see FIXME), the strategy returned by this method
+   * will be used.
+   */
+  def backoffStrategy: BackoffStrategy
+
+  /**
+   * The default retry tester.
+   *
+   * If a request does not specify its own retry tester (see FIXME), the tester returned by this method
+   * will be used.
+   */
+  def retryStrategy: RetryStrategy[Headers]
 
   /**
    * Submits a request to the underlying client.

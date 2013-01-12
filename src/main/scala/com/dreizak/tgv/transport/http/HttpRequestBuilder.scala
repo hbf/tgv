@@ -1,4 +1,4 @@
-package com.dreizak.deepar.infrastructure.transport.http
+package com.dreizak.tgv.transport.http
 
 import com.ning.http.client.Realm.AuthScheme
 import scala.concurrent.duration.FiniteDuration
@@ -6,6 +6,9 @@ import scala.Some.apply
 import com.ning.http.client.AsyncHttpClient
 import com.ning.http.client.PerRequestConfig
 import com.ning.http.client.Realm.RealmBuilder
+import com.dreizak.tgv.transport.retry.BackoffStrategy
+import com.dreizak.tgv.transport.retry.RetryStrategy
+import com.dreizak.tgv.transport.http.sonatype.iteratee.ResponseHeaders
 
 trait SignatureCalculator {
   /**
@@ -15,7 +18,7 @@ trait SignatureCalculator {
 }
 
 /**
- * A request builder for requests to be submitted to a [[com.dreizak.deepar.infrastructure.transport.http.HttpTransport]].
+ * A request builder for requests to be submitted to a [[com.dreizak.tgv.transport.http.HttpTransport]].
  *
  * TODO: support passing a request body (both iteratee/enumerator- and stream-based)
  * TODO: cookie support
@@ -25,6 +28,8 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
                                              private val url: String,
                                              private val headers: Map[String, Seq[String]] = Map(),
                                              private val queryString: Map[String, Seq[String]] = Map(),
+                                             private val backoffStrategy: Option[BackoffStrategy] = None,
+                                             private val retryStrategy: Option[RetryStrategy[ResponseHeaders]] = None,
                                              private val calc: Option[SignatureCalculator] = None,
                                              private val auth: Option[(String, String, AuthScheme)] = None,
                                              private val _followRedirects: Option[Boolean] = None,
@@ -66,6 +71,12 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
   def withVirtualHost(vh: String): HttpRequestBuilder =
     copy(virtualHost = Some(vh))
 
+  def withBackoffStrategy(strategy: BackoffStrategy): HttpRequestBuilder =
+    copy(backoffStrategy = Some(strategy))
+
+  def withRetryStrategy(strategy: RetryStrategy[ResponseHeaders]): HttpRequestBuilder =
+    copy(retryStrategy = Some(strategy))
+
   def build() = {
     headers.foreach(header => header._2.
       foreach(value =>
@@ -91,6 +102,6 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
           build())
     }
 
-    new HttpRequest(transport, nativeBuilder.build())
+    new HttpRequest(transport, backoffStrategy, retryStrategy, nativeBuilder.build())
   }
 }
