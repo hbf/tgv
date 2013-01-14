@@ -29,7 +29,6 @@ import net.codingwell.scalaguice.ScalaModule
  */
 class AsyncHttpTransportModule extends AbstractModule with ScalaModule {
   override def configure = {
-    bind[AtomicInteger].annotatedWith(named("tgv.transport.http.unreleasedResponses")).toInstance(new AtomicInteger(0))
     bind[StreamingAsyncHttpClient].in(SINGLETON)
   }
 

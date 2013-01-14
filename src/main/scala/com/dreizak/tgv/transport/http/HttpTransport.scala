@@ -1,7 +1,6 @@
 package com.dreizak.tgv.transport.http
 
 import com.dreizak.tgv.transport.{ Transport, TransportDefinition, TransportHeaderError }
-import com.dreizak.tgv.transport.http.sonatype.iteratee.ResponseHeaders
 
 case class HttpHeaderError(msg: String, httpStatus: Int /* FIXME: , val failingResponse: HttpResponse */ ) extends RuntimeException(msg) with TransportHeaderError {
   // private val description = msg + " (" + httpStatus + "): " + failingResponse.getResponseBodyExcerpt(2048, "UTF-8") + "..."
@@ -10,7 +9,7 @@ case class HttpHeaderError(msg: String, httpStatus: Int /* FIXME: , val failingR
 
 trait HttpTransportDefinition extends TransportDefinition {
   type Req = HttpRequest
-  type Headers = ResponseHeaders
+  type Headers = HttpHeaders
   type HeaderFailureException = HttpHeaderError
   type RequestBuilder = HttpRequestBuilder
 }

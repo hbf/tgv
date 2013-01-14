@@ -6,15 +6,14 @@ import com.dreizak.util.concurrent.CancellableFuture
 import play.api.libs.iteratee.Iteratee
 import com.dreizak.util.concurrent.Cancellable
 import play.api.libs.iteratee.Enumerator
-import com.dreizak.tgv.transport.retry.RetryStrategy
-import com.dreizak.tgv.transport.retry.BackoffStrategy
+import com.dreizak.tgv.transport.backoff.BackoffStrategy
 
 /**
  * An exception thrown by a [[com.dreizak.tgv.transport.Transport]] in case the response headers
  * indicate an error (FIXME by a `FailureDetector`).
  *
  * @see [[com.dreizak.tgv.transport.Transport]]
- * @see [[com.dreizak.tgv.transport.retry.RetryOracle]] FIXME
+ * @see [[com.dreizak.tgv.transport.backoff.RetryOracle]] FIXME
  */
 trait TransportHeaderError extends Exception {
   /**
@@ -33,12 +32,20 @@ trait TransportRequest[Headers] {
   def backoffStrategy: Option[BackoffStrategy]
 
   /**
-   * The default retry tester.
+   * The default retry strategy.
    *
-   * If a request does not specify its own retry tester (see FIXME), the tester returned by this method
+   * If a request does not specify its own retry strategy (see FIXME), the strategy returned by this method
    * will be used.
    */
-  def retryStrategy: Option[RetryStrategy[Headers]]
+  def retryStrategy: Option[RetryStrategy]
+
+  /**
+   * The default abort strategy.
+   *
+   * If a request does not specify its own abort strategy (see FIXME), the strategy returned by this method
+   * will be used.
+   */
+  def abortStrategy: Option[AbortStrategy[Headers]]
 }
 
 /**
@@ -190,8 +197,8 @@ trait Client[Def <: TransportDefinition] {
  *     to its parent.
  *  2. When the parent completes the request &mdash; successfully or with a failure &mdash; the TODO
  *
- * A transport uses a [[com.dreizak.tgv.transport.retry.RetryStrategy]] and a
- * [[com.dreizak.tgv.transport.retry.RetryOracle]] to realize retrying (see next section
+ * A transport uses a [[com.dreizak.tgv.transport.backoff.RetryStrategy]] and a
+ * [[com.dreizak.tgv.transport.backoff.RetryOracle]] to realize retrying (see next section
  * for more details).
  *
  * New transport instances do not retry. You can install a retry strategy using `withRetryStrategy`.
@@ -235,7 +242,7 @@ trait Transport[Def <: TransportDefinition] extends Client[Def] {
    * If a request does not specify its own retry tester (see FIXME), the tester returned by this method
    * will be used.
    */
-  def retryStrategy: RetryStrategy[Headers]
+  def retryStrategy: RetryStrategy
 
   /**
    * Submits a request to the underlying client.

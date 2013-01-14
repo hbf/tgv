@@ -6,9 +6,9 @@ import scala.Some.apply
 import com.ning.http.client.AsyncHttpClient
 import com.ning.http.client.PerRequestConfig
 import com.ning.http.client.Realm.RealmBuilder
-import com.dreizak.tgv.transport.retry.BackoffStrategy
-import com.dreizak.tgv.transport.retry.RetryStrategy
-import com.dreizak.tgv.transport.http.sonatype.iteratee.ResponseHeaders
+import com.dreizak.tgv.transport.backoff.BackoffStrategy
+import com.dreizak.tgv.transport.RetryStrategy
+import com.dreizak.tgv.transport.AbortStrategy
 
 trait SignatureCalculator {
   /**
@@ -29,7 +29,8 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
                                              private val headers: Map[String, Seq[String]] = Map(),
                                              private val queryString: Map[String, Seq[String]] = Map(),
                                              private val backoffStrategy: Option[BackoffStrategy] = None,
-                                             private val retryStrategy: Option[RetryStrategy[ResponseHeaders]] = None,
+                                             private val retryStrategy: Option[RetryStrategy] = None,
+                                             private val abortStrategy: Option[AbortStrategy[HttpHeaders]] = None,
                                              private val calc: Option[SignatureCalculator] = None,
                                              private val auth: Option[(String, String, AuthScheme)] = None,
                                              private val _followRedirects: Option[Boolean] = None,
@@ -74,8 +75,11 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
   def withBackoffStrategy(strategy: BackoffStrategy): HttpRequestBuilder =
     copy(backoffStrategy = Some(strategy))
 
-  def withRetryStrategy(strategy: RetryStrategy[ResponseHeaders]): HttpRequestBuilder =
+  def withRetryStrategy(strategy: RetryStrategy): HttpRequestBuilder =
     copy(retryStrategy = Some(strategy))
+
+  def withAbortStrategy(strategy: AbortStrategy[HttpHeaders]): HttpRequestBuilder =
+    copy(abortStrategy = Some(strategy))
 
   def build() = {
     headers.foreach(header => header._2.
@@ -102,6 +106,6 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
           build())
     }
 
-    new HttpRequest(transport, backoffStrategy, retryStrategy, nativeBuilder.build())
+    new HttpRequest(transport, backoffStrategy, retryStrategy, abortStrategy, nativeBuilder.build())
   }
 }

@@ -1,4 +1,4 @@
-package com.dreizak.tgv.transport.retry
+package com.dreizak.tgv.transport.backoff
 
 import scala.concurrent.duration._
 

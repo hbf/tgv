@@ -16,6 +16,7 @@ import nu.rinu.test.Response
 import nu.rinu.test.mockito.RequestOf.requestOf
 import play.api.libs.iteratee.Iteratee
 import org.scalatest.junit.JUnitRunner
+import com.dreizak.tgv.transport.http.HttpHeaders
 
 @RunWith(classOf[JUnitRunner])
 class StreamingAsyncHttpClientSpec extends WordSpec with MustMatchers
@@ -35,7 +36,7 @@ class StreamingAsyncHttpClientSpec extends WordSpec with MustMatchers
       when(handler.get(requestOf("/"))).thenReturn(Response(200, payload))
 
       val request = client.nativeClient.prepareGet(server.url + "/").build()
-      def consumer(headers: ResponseHeaders): Iteratee[Array[Byte], String] =
+      def consumer(headers: HttpHeaders): Iteratee[Array[Byte], String] =
         Iteratee.consume[Array[Byte]]().map(arr => new String(arr, UTF_8))
       val future = client.streamResponse(request, consumer)
       val iteratee = await(future)(timeout)

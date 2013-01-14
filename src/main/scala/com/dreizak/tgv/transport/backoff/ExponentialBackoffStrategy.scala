@@ -1,4 +1,4 @@
-package com.dreizak.tgv.transport.retry
+package com.dreizak.tgv.transport.backoff
 
 import scala.concurrent.duration.{ Duration, DurationInt }
 import scala.math.random
@@ -6,16 +6,16 @@ import scala.math.random
 import com.dreizak.tgv.transport.TransportDefinition
 
 /**
- * A [[com.dreizak.tgv.transport.retry.BackoffStrategy]] that retries a fixed number
+ * A [[com.dreizak.tgv.transport.backoff.BackoffStrategy]] that retries a fixed number
  * of times with an exponentially growing, perturbed delay.
  *
  * See the companion object for factory methods and additional documentation.
  */
-final class ExponentialBackoffStrategy private[retry] (
+final class ExponentialBackoffStrategy private[backoff] (
   val attempt: Int,
   remainingRetries: Int,
   val delay: Duration,
-  private[retry] val delayWithoutRandomziation: Duration, // Note: exposed for testing. 
+  private[backoff] val delayWithoutRandomziation: Duration, // Note: exposed for testing. 
   multiplier: Double,
   randomizer: Double) extends BackoffStrategy {
 
@@ -39,7 +39,7 @@ final class ExponentialBackoffStrategy private[retry] (
  */
 object ExponentialBackoffStrategy {
   /**
-   * Creates a [[com.dreizak.tgv.transport.retry.ExponentialBackoffStrategy]] that
+   * Creates a [[com.dreizak.tgv.transport.backoff.ExponentialBackoffStrategy]] that
    * will retry at most `maxRetries` times. Each time, the delay will grow following an exponential
    * growth function.
    *

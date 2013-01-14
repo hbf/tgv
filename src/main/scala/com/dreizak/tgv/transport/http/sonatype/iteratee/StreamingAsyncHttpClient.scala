@@ -11,6 +11,7 @@ import play.api.libs.iteratee.{ Done, Error }
 import play.api.libs.iteratee.{ Iteratee, Step }
 import play.api.libs.iteratee.Input.El
 import com.dreizak.util.concurrent.CancellableFuture
+import com.dreizak.tgv.transport.http.HttpHeaders
 
 /**
  * A version of <a href='https://github.com/sonatype/async-http-client'>Sonatype's AsyncHttpClient</a> that allows streaming the response using iteratees.
@@ -55,7 +56,7 @@ class StreamingAsyncHttpClient @Inject() (val nativeClient: AsyncHttpClient) {
    *
    * @return the iteratee after having fed it the response
    */
-  def streamResponse[A](r: Request, consumer: ResponseHeaders => Iteratee[Array[Byte], A]): CancellableFuture[Iteratee[Array[Byte], A]] = {
+  def streamResponse[A](r: Request, consumer: HttpHeaders => Iteratee[Array[Byte], A]): CancellableFuture[Iteratee[Array[Byte], A]] = {
     var doneOrError = false
     var statusCode = 0
     var iteratee: Iteratee[Array[Byte], A] = null
@@ -73,7 +74,7 @@ class StreamingAsyncHttpClient @Inject() (val nativeClient: AsyncHttpClient) {
 
       override def onHeadersReceived(h: HttpResponseHeaders) = {
         val headers = h.getHeaders()
-        iteratee = consumer(ResponseHeaders(statusCode, ningHeadersToMap(headers)))
+        iteratee = consumer(HttpHeaders(statusCode, ningHeadersToMap(headers)))
         if (future.isCancelled) ABORT else CONTINUE
       }
 

@@ -1,9 +1,9 @@
 package com.dreizak.tgv.transport.http
 
 import com.dreizak.tgv.transport.TransportRequest
-import com.dreizak.tgv.transport.http.sonatype.iteratee.ResponseHeaders
-import com.dreizak.tgv.transport.retry.BackoffStrategy
-import com.dreizak.tgv.transport.retry.RetryStrategy
+import com.dreizak.tgv.transport.backoff.BackoffStrategy
+import com.dreizak.tgv.transport.RetryStrategy
+import com.dreizak.tgv.transport.AbortStrategy
 
 /**
  * A request of a [[com.dreizak.tgv.transport.http.HttpTransport]].
@@ -14,8 +14,9 @@ import com.dreizak.tgv.transport.retry.RetryStrategy
  */
 final class HttpRequest(val transport: HttpTransport,
                         val backoffStrategy: Option[BackoffStrategy],
-                        val retryStrategy: Option[RetryStrategy[ResponseHeaders]],
-                        val httpRequest: com.ning.http.client.Request) extends TransportRequest[ResponseHeaders] {
+                        val retryStrategy: Option[RetryStrategy],
+                        val abortStrategy: Option[AbortStrategy[HttpHeaders]],
+                        val httpRequest: com.ning.http.client.Request) extends TransportRequest[HttpHeaders] {
 
   override def toString() = httpRequest.getRawUrl
 }

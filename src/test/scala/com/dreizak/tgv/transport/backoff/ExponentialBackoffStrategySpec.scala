@@ -1,10 +1,12 @@
-package com.dreizak.tgv.transport.retry
+package com.dreizak.tgv.transport.backoff
 
 import org.junit.runner.RunWith
 import org.scalatest.WordSpec
 import org.scalatest.matchers.MustMatchers
 import org.scalatest.junit.JUnitRunner
-import com.dreizak.tgv.transport.retry.ExponentialBackoffStrategy.exponentialBackoffStrategy
+
+import com.dreizak.tgv.transport.backoff.ExponentialBackoffStrategy.exponentialBackoffStrategy;
+
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
 import scala.annotation.tailrec
