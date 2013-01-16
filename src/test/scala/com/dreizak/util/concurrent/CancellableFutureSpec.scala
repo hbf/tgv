@@ -201,7 +201,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
     "cancel an intermediate cancellable future (in flatMap)" in {
       val f1 = TestFuture("foo")
       val f2 = TestFuture(3)
-      val f = f1.cancellableFuture flatMap { (str: String) => f2.cancellableFuture }
+      val f = f1.cancellableFuture cancellableFlatMap { (str: String) => f2.cancellableFuture }
       f1.completed must be(false)
       f2.completed must be(false)
       f.future.isCompleted must be(false)

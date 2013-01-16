@@ -22,7 +22,9 @@ trait TransportHeaderError extends Exception {
   //  def failingResponse: Resp // FIXME
 }
 
-trait TransportRequest[Headers] {
+trait TransportRequest {
+  type Headers
+
   /**
    * The default retry strategy.
    *
@@ -49,15 +51,14 @@ trait TransportRequest[Headers] {
 }
 
 /**
- * Defines the request and response headers types of a [[com.dreizak.tgv.transport.Transport]] implementation,
- * including the type of the exceptions thrown when a header indicates an error.
+ * A client &mdash; somewhere in a [[com.dreizak.tgv.transport.Transport]] pipeline.
+ *
+ * A `Client` takes a `Request` and streams back a response in a non-blocking way.
  *
  * @see [[com.dreizak.tgv.transport.Transport]]
  */
-trait TransportDefinition {
-  type Req <: TransportRequest[Headers]
-  type Headers
-  type HeaderError <: TransportHeaderError
+trait Client[Req <: TransportRequest] {
+  type Headers = Req#Headers
 
   /**
    * A `Processor[R]` is used to transform the incoming chunks into the response, which is of type `R`.
@@ -69,21 +70,7 @@ trait TransportDefinition {
    * the headers and then produces a processor, which in turn converts the incoming data junks into the
    * response, which is of type `R`.
    */
-  type Consumer[R] = Headers => Processor[R]
-}
-
-/**
- * A client &mdash; somewhere in a [[com.dreizak.tgv.transport.Transport]] pipeline.
- *
- * A `Client` takes a `Request` and streams back a response in a non-blocking way.
- *
- * @see [[com.dreizak.tgv.transport.Transport]]
- */
-trait Client[Def <: TransportDefinition] {
-  type Req = Def#Req
-  type Headers = Def#Headers
-  type Processor[R] = Def#Processor[R]
-  type Consumer[R] = Def#Consumer[R]
+  type Consumer[R] = Req#Headers => Processor[R]
 
   /**
    * Submits the given request.
@@ -219,12 +206,11 @@ trait Client[Def <: TransportDefinition] {
  *  - Limiting the number of parallel requests is currently realized through throttling. Implementations
  *    may override this.
  */
-trait Transport[Def <: TransportDefinition] extends Client[Def] {
-  type Self <: Transport[Def]
-  type HeaderError = Def#HeaderError
+trait Transport[Req <: TransportRequest] extends Client[Req] {
+  type Self <: Transport[Req]
 
-  protected val handler: Client[Def]
-  protected def create(handler: Client[Def], abortStrategy: AbortStrategy[Headers]): Self
+  protected val handler: Client[Req]
+  protected def create(handler: Client[Req], abortStrategy: AbortStrategy[Headers]): Self
 
   //def defaultRetryOracle: RetryOracle[Def] // FIXME
 
@@ -250,8 +236,8 @@ trait Transport[Def <: TransportDefinition] extends Client[Def] {
    * This is a high-level version of `submit(request, consumer)` for non-streaming applications.
    */
   def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] = {
-    def consumer(h: Def#Headers) = Iteratee.consume[Array[Byte]]().map(bytes => (h, bytes))
-    submit(request, consumer _).flatMap((_: Processor[(Headers, Array[Byte])]).run)
+    def consumer(h: Headers) = Iteratee.consume[Array[Byte]]().map(bytes => (h, bytes))
+    submit(request, consumer _).flatMap(_.run)
   }
 
   /**

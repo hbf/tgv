@@ -11,6 +11,7 @@ import org.mockito.Mockito.when
 import com.dreizak.tgv.transport.http.HttpTransport
 import com.dreizak.tgv.infrastructure.testing.MockServer
 import com.dreizak.util.concurrent.CancellableFuture.await
+import com.dreizak.tgv.infrastructure.testing.ExecutionContextForEach
 
 /**
  * Base test for `Transport`s.
@@ -20,7 +21,7 @@ import com.dreizak.util.concurrent.CancellableFuture.await
  * [[com.dreizak.tgv.transport.http.sonatype.AsyncHttpTransportSpec]].
  */
 trait HttpTransportBehaviors {
-  this: WordSpec with MustMatchers with MockServer =>
+  this: WordSpec with MustMatchers with MockServer with ExecutionContextForEach =>
 
   val transport: HttpTransport
 
@@ -28,7 +29,7 @@ trait HttpTransportBehaviors {
     "handle a simple GET request" in {
       when(handler.get(requestOf("/"))).thenReturn(Response(200, "yes"))
       val request = transport.getBuilder(server.url + "/").build
-      //      await(it.submit(request).future).getResponseBody() must be("yes")
+      await(transport.body(request)) must be("yes")
     }
 
     // TODO test when no http status code is provided

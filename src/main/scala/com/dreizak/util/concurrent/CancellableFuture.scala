@@ -135,7 +135,7 @@ trait CancellableFuture[+T] extends Cancellable {
   def flatMap[S](f: T => Future[S])(implicit executor: ExecutionContext): CancellableFuture[S] =
     wrap(future.flatMap(f)(executor))
 
-  def flatMap[S](f: T => CancellableFuture[S])(implicit executor: ExecutionContext, d: DummyImplicit): CancellableFuture[S] =
+  def cancellableFlatMap[S](f: T => CancellableFuture[S])(implicit executor: ExecutionContext): CancellableFuture[S] =
     // Code taken from Scala source, modified appropriately.
     {
       val p = Promise[S]()
@@ -160,10 +160,6 @@ trait CancellableFuture[+T] extends Cancellable {
 
       result
     }
-
-  // Exists because using `flatMap` causes the Scala compiler to complain about ambiguity.
-  def cancellableFlatMap[S](f: T => CancellableFuture[S])(implicit executor: ExecutionContext): CancellableFuture[S] =
-    flatMap(f)(executor, DummyImplicit.dummyImplicit)
 
   def filter(pred: T => Boolean)(implicit executor: ExecutionContext): CancellableFuture[T] =
     wrap(future.filter(pred)(executor))

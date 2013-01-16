@@ -1,17 +1,12 @@
 package com.dreizak.tgv.transport.http
 
-import com.dreizak.tgv.transport.{ Transport, TransportDefinition, TransportHeaderError }
+import com.dreizak.tgv.transport.{ Transport, TransportHeaderError }
+import com.dreizak.tgv.SchedulingContext
+import com.dreizak.util.concurrent.CancellableFuture
 
 case class HttpHeaderError(msg: String, httpStatus: Int /* FIXME: , val failingResponse: HttpResponse */ ) extends RuntimeException(msg) with TransportHeaderError {
   // private val description = msg + " (" + httpStatus + "): " + failingResponse.getResponseBodyExcerpt(2048, "UTF-8") + "..."
   override def toString() = "HttpTransportHeaderFailureException fixme" // FIXME description
-}
-
-trait HttpTransportDefinition extends TransportDefinition {
-  type Req = HttpRequest
-  type Headers = HttpHeaders
-  type HeaderFailureException = HttpHeaderError
-  type RequestBuilder = HttpRequestBuilder
 }
 
 /**
@@ -30,15 +25,33 @@ trait HttpTransportDefinition extends TransportDefinition {
  * to model `HttpRequest`s and `HttpResponse`s. This is not ideal as it does not allow us to easily switch to another HTTP client.
  * So in the future, we may introduce a proper abstraction for these two types, as well as for the builder type `RequestBuilder`.
  */
-trait HttpTransport extends Transport[HttpTransportDefinition] {
+trait HttpTransport extends Transport[HttpRequest] {
   type Self = HttpTransport
-  type RequestBuilder = HttpTransportDefinition#RequestBuilder
+  type RequestBuilder = HttpRequestBuilder
 
   def getBuilder(url: String): RequestBuilder
-  def postBuilder(url: String): RequestBuilder
+  def postBuilder(url: String): RequestBuilder // TODO
   // TODO: other HTTP methods
 
-  def requestBuilder(r: Req): RequestBuilder
+  def requestBuilder(r: HttpRequest): RequestBuilder
+
+  /**
+   * Submits a request to the underlying client, accumulating the response in memory and returning
+   * it as a string, together with the response headers, all wrapped in a future.
+   *
+   * If the response headers indicate any charset, the method will use it.
+   */
+  def response(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[(Headers, String)] =
+    submit(request).map { case (headers, body) => (headers, new String(body, headers.charset())) }
+
+  /**
+   * Submits a request to the underlying client, accumulating the response in memory and returning
+   * it as a string, wrapped in a future.
+   *
+   * A short-hand for `response(request).map { _._2 }`.
+   */
+  def body(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[String] =
+    response(request).map { _._2 }
 }
 
 object HttpTransport {
