@@ -62,9 +62,11 @@ object TgvBuild extends Build {
     val slf4s                  = "com.weiglewilczek.slf4s"     % "slf4s_2.9.1"                          % "1.0.7"
     
     //========================== Utilities ==============================================================================================================================
+    val guava                  = "com.google.guava"            % "guava"                                % "13.0.1"
+    val jsr305ForGuava         = "com.google.code.findbugs"    % "jsr305"                               % "1.3.9"
   
     //========================== Dependency injection ===================================================================================================================  
-    val scalaGuice             = "net.codingwell"                 % "scala-guice_2.9.2"                         % "3.0.1" // "3.0.1-SNAPSHOT"
+    val scalaGuice             = "net.codingwell"              %% "scala-guice"                         % "3.0.1"
     
     //========================== Configuration ==========================================================================================================================  
     val rocoto                 = "org.99soft.guice"            % "rocoto"                               % "6.1"
@@ -83,6 +85,8 @@ object TgvBuild extends Build {
     //val json4sJackson          = "org.json4s"                  % "json4s-jackson_2.10.0-RC3"            % "3.1.0-SNAPSHOT"
     //val scalesXml              = "org.scalesxml"               % "scales-xml_2.10.0-RC2"                % "0.4.4"
 
+    //========================== Misc ==================================================================================================================================
+    
     object Test {
       val junit                = "junit"                       % "junit"                                % "4.10"                    % "test"
       val scalaTest            = "org.scalatest"               % "scalatest_2.10.0-RC3"                 % "2.0.M5-B1"                  % "test"
@@ -92,6 +96,6 @@ object TgvBuild extends Build {
       val jetty                = "org.eclipse.jetty"           % "jetty-server"                         % "8.1.0.v20120127"         % "test"
     }
 
-    val Tgv = Seq(log4j, slf4jlog4j, slf4s, scalaGuice, rocoto, iteratees, asyncHttpClient, commonsLang, Test.junit, Test.scalaTest, Test.mockito, Test.jmock, /*Test.junitIntf,*/ Test.jetty)
+    val Tgv = Seq(log4j, slf4jlog4j, slf4s, guava, jsr305ForGuava, scalaGuice, rocoto, iteratees, asyncHttpClient, commonsLang, Test.junit, Test.scalaTest, Test.mockito, Test.jmock, /*Test.junitIntf,*/ Test.jetty)
   }
 }

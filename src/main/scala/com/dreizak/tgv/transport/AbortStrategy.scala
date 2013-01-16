@@ -12,7 +12,7 @@ import com.dreizak.tgv.transport.http.HttpHeaderError
  * @see [[com.dreizak.tgv.transport.TransportHeaderError]]
  */
 trait AbortStrategy[Headers] {
-  def shouldAbort(headers: Headers): Option[Exception]
+  def shouldAbort(headers: Headers): Option[Throwable]
 }
 
 object AbortStrategy {

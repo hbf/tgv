@@ -21,6 +21,7 @@ import com.dreizak.tgv.transport.backoff.ExponentialBackoffStrategy.exponentialB
 import com.dreizak.tgv.transport.http.HttpHeaders
 import scala.util.Success
 import com.dreizak.tgv.transport.RetryStrategy
+import com.dreizak.tgv.transport.AbortStrategy
 
 /**
  * A [[com.dreizak.tgv.transport.Transport]] implementation for the HTTP protocol that uses
@@ -47,11 +48,11 @@ import com.dreizak.tgv.transport.RetryStrategy
  */
 class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
                                             handler_ : Client[HttpTransportDefinition],
-                                            val backoffStrategy: BackoffStrategy,
-                                            val retryStrategy: RetryStrategy) extends HttpTransport {
+                                            abortStrategy: AbortStrategy[HttpHeaders]) extends HttpTransport {
   override val handler = handler_
 
-  override protected def create(handler: Client[HttpTransportDefinition]): Self = new AsyncHttpTransport(client, handler, backoffStrategy, retryStrategy)
+  override protected def create(handler: Client[HttpTransportDefinition], abortStrategy: AbortStrategy[Headers]): Self =
+    new AsyncHttpTransport(client, handler, abortStrategy)
 
   override def getBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.prepareGet(url), url)
   override def postBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.preparePost(url), url)
@@ -60,25 +61,24 @@ class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
 }
 
 object AsyncHttpTransport extends Logging {
-  def apply(client: StreamingAsyncHttpClient) = {
-    val backoffStrategy = exponentialBackoffStrategy(0)
-    val retryStrategy = dontRetry()
-
-    new AsyncHttpTransport(client, new Client[HttpTransportDefinition] {
+  private[sonatype] def asyncHttpHandler(client: StreamingAsyncHttpClient, abortStrategy: AbortStrategy[HttpHeaders]) =
+    new Client[HttpTransportDefinition] {
       def checkHeaders[R](consumer: Consumer[R])(headers: Headers): Processor[R] = {
-        // FIXME
-        //        if (retryStrategy.shouldRetry(Success(headers)))
-        //        throw new HttpHeaderError("HTTP status ${headers.status} indicates error.", headers.status)
+        abortStrategy.shouldAbort(headers).map(t => throw t)
         consumer(headers)
       }
 
       def submit[R](r: Req, consumer: Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Processor[R]] =
-        client.streamResponse(r.httpRequest, checkHeaders(consumer)).
-          mapFailure(ex => ex match {
-            // TODO: what is this again? document! 
-            case e: ExecutionException if e.getCause.isInstanceOf[CancelledException] => e.getCause
-            case _ => ex
-          })
-    }, backoffStrategy, retryStrategy)
+        client.streamResponse(r.httpRequest, checkHeaders(consumer))
+      // FIXME: what is this again? document! 
+      //          mapFailure(ex => ex match {
+      //            case e: ExecutionException if e.getCause.isInstanceOf[CancelledException] => e.getCause
+      //            case _ => ex
+      //          })
+    }
+
+  def apply(client: StreamingAsyncHttpClient) = {
+    val abortStrategy = AbortStrategy.accept2xxStatusOnly()
+    new AsyncHttpTransport(client, asyncHttpHandler(client, abortStrategy), abortStrategy)
   }
 }

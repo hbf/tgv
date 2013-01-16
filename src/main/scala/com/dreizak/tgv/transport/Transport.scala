@@ -224,25 +224,9 @@ trait Transport[Def <: TransportDefinition] extends Client[Def] {
   type HeaderError = Def#HeaderError
 
   protected val handler: Client[Def]
-  protected def create(handler: Client[Def]): Self
+  protected def create(handler: Client[Def], abortStrategy: AbortStrategy[Headers]): Self
 
   //def defaultRetryOracle: RetryOracle[Def] // FIXME
-
-  /**
-   * The default retry strategy.
-   *
-   * If a request does not specify its own retry strategy (see FIXME), the strategy returned by this method
-   * will be used.
-   */
-  def backoffStrategy: BackoffStrategy
-
-  /**
-   * The default retry tester.
-   *
-   * If a request does not specify its own retry tester (see FIXME), the tester returned by this method
-   * will be used.
-   */
-  def retryStrategy: RetryStrategy
 
   /**
    * Submits a request to the underlying client.
@@ -257,8 +241,26 @@ trait Transport[Def <: TransportDefinition] extends Client[Def] {
    *
    * @return a future holding the result of the computation
    */
-  override def submit[R](request: Req, consumer: Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Processor[R]] =
+  def submit[R](request: Req, consumer: Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Processor[R]] =
     handler.submit(request, consumer)
+
+  /**
+   * Submits a request to the underlying client, accumulating the response in memory and returning it as a future.
+   *
+   * This is a high-level version of `submit(request, consumer)` for non-streaming applications.
+   */
+  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] = {
+    def consumer(h: Def#Headers) = Iteratee.consume[Array[Byte]]().map(bytes => (h, bytes))
+    submit(request, consumer _).flatMap((_: Processor[(Headers, Array[Byte])]).run)
+  }
+
+  /**
+   * Creates a new `Transport` based on the current one that uses the given abort strategy.
+   *
+   * @param abortStrategy strategy that determines which headers generate errors
+   */
+  def withAbortStrategy(abortStrategy: AbortStrategy[Headers])(implicit context: SchedulingContext): Self =
+    create(handler, abortStrategy)
 
   /**
    * Creates a new `Transport` based on the current one that limits the number of parallel requests.

@@ -1,15 +1,9 @@
 package com.dreizak.util.service
 
-import com.google.inject.Binder
-import com.google.inject.Module
-import com.google.inject.AbstractModule
+import com.google.inject.{AbstractModule, Binder, Injector, Key, Module, TypeLiteral}
 import com.weiglewilczek.slf4s.Logging
-import scala.reflect.ClassTag
-import com.google.inject.TypeLiteral
-import com.google.inject.Injector
-import com.google.inject.Key
+
 import net.codingwell.scalaguice.ScalaModule
-import com.google.inject.Module
 
 /**
  * A Guice `AbstractModule` that provides a `register` method to register `Services` that can

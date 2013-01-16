@@ -8,6 +8,10 @@ import com.dreizak.util.service.ServiceRegistryModule
 import com.dreizak.tgv.infrastructure.testing.GuiceInjection
 import com.dreizak.tgv.infrastructure.testing.MockServer
 import com.dreizak.tgv.infrastructure.testing.TemporaryFolders
+import com.dreizak.tgv.transport.HttpTransportBehaviors
+import com.google.inject.Inject
+import com.dreizak.tgv.transport.http.HttpTransport
+import com.dreizak.tgv.infrastructure.testing.ExecutionContextForEach
 
 //import nu.rinu.test.HttpServer
 //import nu.rinu.test.HttpServerHandler
@@ -25,25 +29,18 @@ import com.dreizak.tgv.infrastructure.testing.TemporaryFolders
 
 @RunWith(classOf[JUnitRunner])
 class AsyncHttpTransportSpec extends ServiceRegistryModule with WordSpec with MustMatchers
-  with GuiceInjection with MockServer with TemporaryFolders {
+  with GuiceInjection with MockServer with TemporaryFolders with ExecutionContextForEach with HttpTransportBehaviors {
 
-  def configure() = {} // install(new TestingModule())
+  def configure() = install(new AsyncHttpTransportModule())
 
-  //  @Inject
-  //  val transport: HttpTransport = null
-  //
-  //  @Inject
-  //  var executor: ExecutionContextService = _
+  @Inject
+  override val transport: HttpTransport = null
 
   "A Sontatype AsyncHttpClient transport" should {
-    "..." in {
-      //      implicit val executorContext = executor.context
-      //
-      //      when(handler.get(requestOf("/"))).thenReturn(Response(200, "yes"))
-      //      val request = transport.getBuilder(server.url + "/")
-      // FIXME // await(transport.submit(request).future).getResponseBody() must be("yes")
+    "..." in { // example test not from `HttpTransportBehaviors`
+      println(transport)
     }
 
-    // TODO test when no http status code is provided
+    behave like httpTransport()
   }
 }
