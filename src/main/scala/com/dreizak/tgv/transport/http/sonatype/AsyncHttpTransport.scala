@@ -44,12 +44,12 @@ class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
 }
 
 object AsyncHttpTransport extends Logging {
-  import Transport.Consumer
-
   private[sonatype] def asyncHttpHandler(client: StreamingAsyncHttpClient) =
     new Client[HttpRequest] {
-      def submit[R](r: HttpRequest, consumer: HttpHeaders => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
-        client.streamResponse(r.httpRequest, consumer)
+      def submit(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] =
+        ???
+      //      def submit[R](r: HttpRequest, consumer: HttpHeaders => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
+      //        client.streamResponse(r.httpRequest, consumer)
       // FIXME: what is this again? document! 
       //          mapFailure(ex => ex match {
       //            case e: ExecutionException if e.getCause.isInstanceOf[CancelledException] => e.getCause

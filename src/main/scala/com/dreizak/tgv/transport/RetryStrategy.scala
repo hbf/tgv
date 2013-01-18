@@ -48,13 +48,17 @@ object RetryStrategy {
 
   /**
    * A [[com.dreizak.tgv.transport.RetryStrategy]] that retries on non-fatal errors and
-   * any [[com.dreizak.tgv.transport.TransportHeaderError]] except 4xx (client error) status.
+   * any [[com.dreizak.tgv.transport.TransportHeaderError]] except (most) 4xx (client error) status.
+   *
+   * We say most because some 4xx (client error) codes, as <a href='http://en.wikipedia.org/wiki/List_of_HTTP_status_codes'>listed
+   * on Wikipedia</a>, do seem to have a chance of success on retry. Currently, the following 4xx codes <em>will</em>
+   * be retried: 420, 429.
    */
   def retryAllBut4xx() =
     new RetryStrategy {
       def shouldRetry(cause: Throwable) = cause match {
         case _: CancelledException => false
-        case HttpHeaderError(_, status, _) if status < 400 || status >= 500 => true
+        case HttpHeaderError(_, status, _) if status < 400 || status >= 500 || status == 420 || status == 429 => true
         case NonFatal(_) => true
         case _ => false
       }

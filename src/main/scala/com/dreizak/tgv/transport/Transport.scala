@@ -1,91 +1,76 @@
 package com.dreizak.tgv.transport
 
-import scala.concurrent.duration._
 import com.dreizak.tgv.SchedulingContext
-import com.dreizak.util.concurrent.CancellableFuture
-import play.api.libs.iteratee.Iteratee
-import com.dreizak.util.concurrent.Cancellable
-import play.api.libs.iteratee.Enumerator
 import com.dreizak.tgv.transport.backoff.BackoffStrategy
-import com.dreizak.tgv.transport.http.HttpHeaderError
-import com.dreizak.tgv.transport.http.HttpHeaders
+import com.dreizak.util.concurrent.CancellableFuture
 
 /**
  * An exception thrown by a [[com.dreizak.tgv.transport.Transport]] in case the response headers
- * indicate an error (FIXME by a `FailureDetector`).
+ * indicate an error.
+ *
+ * `TransportHeaderError`s are used in particular by retry strategies to decide whether the error
+ * (in the case of HTTP: which HTTP status code) is such that the request should be retried.
  *
  * @see [[com.dreizak.tgv.transport.Transport]]
- * @see [[com.dreizak.tgv.transport.backoff.RetryOracle]] FIXME
  */
-trait TransportHeaderError extends Exception {
-  /**
-   * The response that was classified as an error.
-   */
-  //  def failingResponse: Resp // FIXME
-}
+trait TransportHeaderError extends Exception
 
+/**
+ * The base class for requests as submitted to a [[com.dreizak.tgv.transport.Transport]].
+ *
+ * A request may specify a per-request retry strategy and backoff strategy; in case one is not
+ * provided, the transport's default strategy will be used, respectively.
+ *
+ * Refer to [[com.dreizak.tgv.transport.http.HttpRequest]] for a subclass of `TransportRequest`
+ * for the HTTP protocol.
+ */
 trait TransportRequest {
   type Headers
 
   /**
-   * The default retry strategy.
+   * The retry strategy to use of this request.
    *
-   * If a request does not specify its own retry strategy (see FIXME), the strategy returned by this method
-   * will be used.
-   */
-  def backoffStrategy: Option[BackoffStrategy]
-
-  /**
-   * The default retry strategy.
-   *
-   * If a request does not specify its own retry strategy (see FIXME), the strategy returned by this method
-   * will be used.
+   * If `retryStrategy` is `None`, the transport's default retry strategy will be used.
    */
   def retryStrategy: Option[RetryStrategy]
+
+  /**
+   * The backoff strategy to use for this request.
+   *
+   * If `backoffStrategy` is `None`, the transport's default backoff strategy will be used.
+   */
+  def backoffStrategy: Option[BackoffStrategy]
 }
 
 /**
  * A client &mdash; somewhere in a [[com.dreizak.tgv.transport.Transport]] pipeline.
  *
- * A `Client` takes a `Request` and streams back a response in a non-blocking way.
+ * A `Client` takes a request and returns a response. A `Client` provides two ways of returning responses
+ * to a caller, either by waiting for the whole response to arrive (accumulating it in memory) or
+ * through <em>streaming</em>. (TODO: Streaming is not implemented yet)
  *
  * @see [[com.dreizak.tgv.transport.Transport]]
  */
 trait Client[Req <: TransportRequest] {
-  import Transport.Consumer
-
   type Headers = Req#Headers
 
   /**
-   * Submits the given request.
+   * Submits the given request, reads the response (accumulating it in memory) and returns it wrapped in a future.
    *
-   * The response will eventually be fed to the given `consumer` (assuming no error occurs); no `EOF` will be fed to `consumer`.
+   * TODO: introduce a new method for streaming and (possibly) implement this method here by using the streaming one
    *
-   * The returned future eventually holds the consumer iteratee in the state when it has been fed the last junk of data
-   * of the response.
-   *
-   * In case of an error, the returned future will be completed with an exception. If the returned future is cancelled, it will
-   * be completed with a `CancelledException` (if it is not already completed).
-   *
-   * TODO document that header errors must be caught be the consumer; throwing a headererror (refer to http case)
-   * can be used to have the request retried automatically. (two options: throw right after receiving the error or after
-   * having received the whole response)
-   *
-   * Implementations may or may not support cancelling when the consumer has already received part of the response. It may
-   * therefore happen that `consumer` has already been fed chunks of the response and then the request aborts (completing
-   * the returned future with a `Cancelleded
-   *
-   * Notice that you will not have to "close" any resources
+   * @see [[com.dreizak.tgv.transport.Transport]]
    */
-  def submit[R](request: Req, consumer: Headers => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]]
+  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])]
 }
 
 /**
  * Processes <em>requests</em> by sending them to a <em>client</em> and consuming their responses asynchronously.
  *
- * A `Transport` sends `Request`s to a <em>client</em>, which asynchronously produces a `Response` to be consumed
- * by the request's <em>consumer</em>. `Transport`s support <em>limiting the number of parallel connections</em>,
- * <em>throttling</em>, <em>retrying</em>, <em>transforming</em>, and in addition, <em>cancellation</em>.
+ * `Transport`s support <em>limiting the number of parallel connections</em>, <em>throttling</em>, <em>retrying</em>,
+ * <em>transforming</em>, and in addition, <em>cancellation</em>. A `Transport` provides two ways of returning responses
+ * to a caller (see trait [[com.dreizak.tgv.transport.Client]]), either by waiting for the whole response to arrive
+ * (accumulating it in memory) or through <em>streaming</em>. (TODO: Streaming is not implemented yet)
  *
  * Throttling, retrying and transforming are implemented through "chaining". When you call a transport's
  * `withThrottling`, `withRetryStrategy`, or `withTransform` method, it returns a <em>new</em> transport
@@ -106,12 +91,14 @@ trait Client[Req <: TransportRequest] {
  * request. It will then return the response to `throttledAndRetrying`, which in case of a failure may
  * decide to resubmit the request to `throttled`.
  *
- * In general, when you submit a request to a transport, using `submit`, the transport will either process the request
+ * In general, when you `submit` a request to a transport, the transport will either process the request
  * itself, producing a response to return to the caller of `submit`, or, in case the transport was
  * obtained through one of the `with...` methods (like `withThrottling`, etc.), it will eventually
  * forward the request to its parent throttler, by calling the parent's `submit` method. Notice that in the
  * latter case, the request might be submitted to the parent any number of times (e.g., to retry the
- * request if necessary) and might change the request and/or its response along the way.
+ * request if necessary) and might change the request and/or its response along the way. In a chain
+ * of transports, the one transport that processes the request itself (and does not have a parent to
+ * which it `submit's the request) is called the <em>root transport</em>.
  *
  * Refer to the documentation of the concrete implementation to learn how to create `Request`s; some
  * implementations offer factories, others may provide dedicated methods that return request builders (or similar).
@@ -141,46 +128,39 @@ trait Client[Req <: TransportRequest] {
  * A request and/or its response can be transformed using [[com.dreizak.tgv.transport.transform.Transform]]s.
  * You use the `withTransform` method of a `Transport` to obtain a new `Transport` instance which, when its `submit`
  * method is invoked for a request `r`, say, will first transform the request, then call its parent transport's
- * `submit` to obtain a response and finally transforms the response.
+ * `submit` to obtain a response and finally transforms the response. (TODO: The `Transform` trait is likely
+ * to be change in order to support streaming. Therefore, implementations of it should not rely on a response
+ * being available. That is, they may change the request and make zero, one, or more invocations of the
+ * parent's `submit` method, but they should not rely on the response itself.)
  *
  * == Failures and retrying ==
  *
- * FIXME: retry can be requested during header inspection or at anytime before the request has finished
- * by throwing TODO
+ * (TODO: When streaming is supported, retry may be requested &mdash; by means of throwing an exception &mdash;
+ * during header inspection <em>before</em> the response has been entirely read. This has the advantage that
+ * no resources are wasted reading the response in those cases when it is not needed anyway (this is the
+ * reason why `HttpHeaderError` has an `Option` as its `failingResponse` field). However, while in the
+ * non-streaming case (where the whole response is read first before the headers are inspected) we can
+ * throw a `HttpHeaderError` on any non-2xx status code, we cannot do so in the streaming case &mdash;
+ * precisely because this would not read the response body, which might be needed be the caller. So we
+ * need to find a good API for all this.)
  *
- * A transport uses an underlying client to produce responses from requests. In doing so, two kinds of
- * errors can happen:
+ * When a request is processed, the root transport inspects the headers of the received response and
+ * decides whether they signal an error. (In case of the HTTP protocol, any non-2xx status code is an
+ * error; notice here that redirects (3xx status codes) will be followed by the client if it is
+ * configured to do so, so these will not signal errors.) In case the headers indicate an error, the
+ * root transport will throw a `HttpHeaderError` exception. Also, in case of any other errors, like
+ * I/O problems, an exception will be thrown.
  *
- *  - <em>Hard failure:</em> the client cannot obtain a response at all for a given request. This may happen for example
- *    when there is no network connectivity, or when the transport makes request to a remote server
- *    that happens to be down.
- *
- *  - <em>Soft failure:</em> the client receives a response but the underlying transport protocol indicates an error.
- *    For example, [[com.dreizak.tgv.transport.http.HttpTransport]] uses the
- *    HTTP protocol, which indicates certain errors via HTTP Status Codes. The transport will
- *    decide which responses are failures and which not (and for HTTP, for instance, a response is
- *    a soft failure iff its status code is not a 2xx one).
- *
- * Soft failures result in an exception of type `HeaderFailureException` (or a subclass thereof), that is,
- * the future returned by the transport's `submit` method will be a `Failure(t)` where `t` is a
- * `HeaderFailureException`.
- *
- * A transport, `t`, say, obtained via `withRetryStrategy(s, o)` for a `RetryStrategy` `s` and a `RetryOracle` `o`,
- * behaves as follows:
- *
- *  1. When a request `r` is submitted via `t.submit(r)`, the transport `t` will `submit` the request
- *     to its parent.
- *  2. When the parent completes the request &mdash; successfully or with a failure &mdash; the TODO
- *
- * A transport uses a [[com.dreizak.tgv.transport.backoff.RetryStrategy]] and a
- * [[com.dreizak.tgv.transport.backoff.RetryOracle]] to realize retrying (see next section
- * for more details).
+ * If a parent transport has been obtained via `withRetryStrategy`, it will use its retry strategy to
+ * inspect the exception that has been thrown and decide whether the request should be retried. If so,
+ * a backoff strategy is used to control the delays between retries and the maximal number of attempted
+ * retries.
  *
  * New transport instances do not retry. You can install a retry strategy using `withRetryStrategy`.
  *
  * == Implementation notes ==
  *
- * Two `Request`s must be equal iff they are the same instance.
+ * Two `Request`s must be equal iff they are the same instance. (FIXME: is this still required?)
  *
  * Cancellation:
  *
@@ -191,17 +171,13 @@ trait Client[Req <: TransportRequest] {
  *
  * Limiting:
  *
- *  - Limiting the number of parallel requests is currently realized through throttling. Implementations
- *    may override this.
+ *  - Limiting the number of parallel requests is currently realized through throttling.
  */
 trait Transport[Req <: TransportRequest] extends Client[Req] {
-  import Transport.Consumer
   type Self <: Transport[Req]
 
   protected val handler: Client[Req]
   protected def create(handler: Client[Req]): Self
-
-  //def defaultRetryOracle: RetryOracle[Def] // FIXME
 
   /**
    * Submits a request to the underlying client.
@@ -223,18 +199,8 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    *
    * @return a future holding the result of the computation or an exception in case of a failure
    */
-  def submit[R](request: Req, callback: Headers => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
-    handler.submit(request, callback)
-
-  /**
-   * Submits a request to the underlying client, accumulating the response in memory and returning it as a future.
-   *
-   * This is a high-level version of `submit(request, consumer)` for non-streaming applications.
-   */
-  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] = {
-    def consumer(h: Headers) = Iteratee.consume[Array[Byte]]().map(bytes => (h, bytes))
-    null //submit(request, consumer _).flatMap(_.run)
-  }
+  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] =
+    handler.submit(request)
 
   /**
    * Creates a new `Transport` based on the current one that limits the number of parallel requests.
@@ -280,37 +246,4 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
   //      def submit[R](request: Req, consumer: Req#Headers => Consumer[R][R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
   //        transform(request, consumer, handler)
   //    })
-}
-
-object Transport {
-  type Consumer[R] = Iteratee[Array[Byte], R]
-
-  /**
-   * Ignore headers.
-   *
-   * Wraps a `Consumer` so that it can be passed to a `Transport`'s `submit` method; all
-   * headers of the response will be ignored.
-   *
-   * This is suitable for non-streaming usage of `Transport`, i.e., where you examine the headers after
-   * the full response has been received.
-   */
-  def ignoreHeaders[Headers, R](consumer: Consumer[R]): Headers => Consumer[R] = headers => consumer
-
-  /**
-   * Only accept HTTP 2xx (success) and 4xx (client error) headers.
-   *
-   * Notice that if the underlying client (see for example [[com.dreizak.tgv.transport.http.sonatype.AsyncHttpTransport]])
-   * is configured to follow redirects, HTTP 3xx (redirect) headers will implicitly be accepted, too, behind the scenes.
-   *
-   * Wraps a `Consumer` so that it can be passed to a `Transport`'s `submit` method; the HTTP status
-   * header of the response will be inspected and a `HttpHeaderError` error thrown in case the
-   * status is different from 2xx and 4xx.
-   *
-   * This method is suitable for streaming usage of `Transport` where the remaining response does not need to be
-   * received when an error in the headers is detected. As a consequence, the thrown `HttpHeaderError` will <em>not</em>
-   * not contain the response in its `failingResponse` field.
-   */
-  def accept2xxAnd4xxHeaders[R](consumer: Consumer[R]): HttpHeaders => Consumer[R] = h =>
-    if (h.status >= 200 && h.status < 300) consumer
-    else throw new HttpHeaderError(s"HTTP status ${h.status} indicates error.", h.status)
 }

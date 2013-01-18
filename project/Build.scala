@@ -66,7 +66,7 @@ object TgvBuild extends Build {
     val jsr305ForGuava         = "com.google.code.findbugs"    % "jsr305"                               % "1.3.9"
   
     //========================== Dependency injection ===================================================================================================================  
-    val scalaGuice             = "net.codingwell"              %% "scala-guice"                         % "3.0.1"
+    val scalaGuice             = "net.codingwell"              %% "scala-guice"                         % "3.0.2"
     
     //========================== Configuration ==========================================================================================================================  
     val rocoto                 = "org.99soft.guice"            % "rocoto"                               % "6.1"
