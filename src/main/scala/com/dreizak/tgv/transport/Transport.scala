@@ -7,6 +7,8 @@ import play.api.libs.iteratee.Iteratee
 import com.dreizak.util.concurrent.Cancellable
 import play.api.libs.iteratee.Enumerator
 import com.dreizak.tgv.transport.backoff.BackoffStrategy
+import com.dreizak.tgv.transport.http.HttpHeaderError
+import com.dreizak.tgv.transport.http.HttpHeaders
 
 /**
  * An exception thrown by a [[com.dreizak.tgv.transport.Transport]] in case the response headers
@@ -40,14 +42,6 @@ trait TransportRequest {
    * will be used.
    */
   def retryStrategy: Option[RetryStrategy]
-
-  /**
-   * The default abort strategy.
-   *
-   * If a request does not specify its own abort strategy (see FIXME), the strategy returned by this method
-   * will be used.
-   */
-  def abortStrategy: Option[AbortStrategy[Headers]]
 }
 
 /**
@@ -58,19 +52,9 @@ trait TransportRequest {
  * @see [[com.dreizak.tgv.transport.Transport]]
  */
 trait Client[Req <: TransportRequest] {
+  import Transport.Consumer
+
   type Headers = Req#Headers
-
-  /**
-   * A `Processor[R]` is used to transform the incoming chunks into the response, which is of type `R`.
-   */
-  type Processor[R] = Iteratee[Array[Byte], R]
-
-  /**
-   * A `Consumer[R]` is the callback you provide when you `submit` a request to a `Client`. It first consumes
-   * the headers and then produces a processor, which in turn converts the incoming data junks into the
-   * response, which is of type `R`.
-   */
-  type Consumer[R] = Req#Headers => Processor[R]
 
   /**
    * Submits the given request.
@@ -83,13 +67,17 @@ trait Client[Req <: TransportRequest] {
    * In case of an error, the returned future will be completed with an exception. If the returned future is cancelled, it will
    * be completed with a `CancelledException` (if it is not already completed).
    *
+   * TODO document that header errors must be caught be the consumer; throwing a headererror (refer to http case)
+   * can be used to have the request retried automatically. (two options: throw right after receiving the error or after
+   * having received the whole response)
+   *
    * Implementations may or may not support cancelling when the consumer has already received part of the response. It may
    * therefore happen that `consumer` has already been fed chunks of the response and then the request aborts (completing
    * the returned future with a `Cancelleded
    *
    * Notice that you will not have to "close" any resources
    */
-  def submit[R](request: Req, consumer: Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Processor[R]]
+  def submit[R](request: Req, consumer: Headers => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]]
 }
 
 /**
@@ -207,10 +195,11 @@ trait Client[Req <: TransportRequest] {
  *    may override this.
  */
 trait Transport[Req <: TransportRequest] extends Client[Req] {
+  import Transport.Consumer
   type Self <: Transport[Req]
 
   protected val handler: Client[Req]
-  protected def create(handler: Client[Req], abortStrategy: AbortStrategy[Headers]): Self
+  protected def create(handler: Client[Req]): Self
 
   //def defaultRetryOracle: RetryOracle[Def] // FIXME
 
@@ -218,17 +207,24 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    * Submits a request to the underlying client.
    *
    * If the transport employs throttling (see `withThrottling`), the request will be passed to the underlying
-   * client as soon as the rate control allows it.
+   * client as soon as the rate control allows it. If the transport employs retrying (see `withRetrying`), the
+   * request will be retried transparently behind the scenes (see also below). If the transport employs
+   * transform (see `withTransform`) the transform(s) will transparently be applied.
    *
-   * If the transport employs retrying (see `withRetrying`), the request will be retried transparently
-   * behind the scenes.
+   * In case any error occurs (I/O-exception, etc.), the future returned by this method will be completed with the
+   * error. This also holds for the case when `callback` or the consumer returned by it throw an exception. However,
+   * if the transport employs retrying (see `withRetrying`), the retry strategy may decide, upon the inspection
+   * of the thrown exception that the request will be retried.
    *
-   * FIXME `withTransform`
+   * In case the response headers may indicate errors, as is the case with HTTP response headers, `callback`
+   * may inspect the headers and throw an exception, possibly to be handled by a retry strategy in place.
+   * Notice that if the callback does not throw an exception, it will be fed the response, whether or not
+   * it contains the success or error response.
    *
-   * @return a future holding the result of the computation
+   * @return a future holding the result of the computation or an exception in case of a failure
    */
-  def submit[R](request: Req, consumer: Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Processor[R]] =
-    handler.submit(request, consumer)
+  def submit[R](request: Req, callback: Headers => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
+    handler.submit(request, callback)
 
   /**
    * Submits a request to the underlying client, accumulating the response in memory and returning it as a future.
@@ -237,16 +233,8 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    */
   def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] = {
     def consumer(h: Headers) = Iteratee.consume[Array[Byte]]().map(bytes => (h, bytes))
-    submit(request, consumer _).flatMap(_.run)
+    null //submit(request, consumer _).flatMap(_.run)
   }
-
-  /**
-   * Creates a new `Transport` based on the current one that uses the given abort strategy.
-   *
-   * @param abortStrategy strategy that determines which headers generate errors
-   */
-  def withAbortStrategy(abortStrategy: AbortStrategy[Headers])(implicit context: SchedulingContext): Self =
-    create(handler, abortStrategy)
 
   /**
    * Creates a new `Transport` based on the current one that limits the number of parallel requests.
@@ -289,7 +277,40 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    */
   //  def withTransform(transform: Transform[Def]): Self =
   //    create(new Client[Def] {
-  //      def submit[R](request: Req, consumer: Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Processor[R]] =
+  //      def submit[R](request: Req, consumer: Req#Headers => Consumer[R][R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
   //        transform(request, consumer, handler)
   //    })
+}
+
+object Transport {
+  type Consumer[R] = Iteratee[Array[Byte], R]
+
+  /**
+   * Ignore headers.
+   *
+   * Wraps a `Consumer` so that it can be passed to a `Transport`'s `submit` method; all
+   * headers of the response will be ignored.
+   *
+   * This is suitable for non-streaming usage of `Transport`, i.e., where you examine the headers after
+   * the full response has been received.
+   */
+  def ignoreHeaders[Headers, R](consumer: Consumer[R]): Headers => Consumer[R] = headers => consumer
+
+  /**
+   * Only accept HTTP 2xx (success) and 4xx (client error) headers.
+   *
+   * Notice that if the underlying client (see for example [[com.dreizak.tgv.transport.http.sonatype.AsyncHttpTransport]])
+   * is configured to follow redirects, HTTP 3xx (redirect) headers will implicitly be accepted, too, behind the scenes.
+   *
+   * Wraps a `Consumer` so that it can be passed to a `Transport`'s `submit` method; the HTTP status
+   * header of the response will be inspected and a `HttpHeaderError` error thrown in case the
+   * status is different from 2xx and 4xx.
+   *
+   * This method is suitable for streaming usage of `Transport` where the remaining response does not need to be
+   * received when an error in the headers is detected. As a consequence, the thrown `HttpHeaderError` will <em>not</em>
+   * not contain the response in its `failingResponse` field.
+   */
+  def accept2xxAnd4xxHeaders[R](consumer: Consumer[R]): HttpHeaders => Consumer[R] = h =>
+    if (h.status >= 200 && h.status < 300) consumer
+    else throw new HttpHeaderError(s"HTTP status ${h.status} indicates error.", h.status)
 }

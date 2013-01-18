@@ -1,9 +1,7 @@
 package com.dreizak.tgv.transport.backoff
 
-import scala.concurrent.duration.{ Duration, DurationInt }
+import scala.concurrent.duration._
 import scala.math.random
-
-import com.dreizak.tgv.transport.TransportDefinition
 
 /**
  * A [[com.dreizak.tgv.transport.backoff.BackoffStrategy]] that retries a fixed number

@@ -1,11 +1,12 @@
 package com.dreizak.tgv.transport.http.sonatype
 
 import com.dreizak.tgv.SchedulingContext
-import com.dreizak.tgv.transport.{AbortStrategy, Client}
-import com.dreizak.tgv.transport.http.{HttpHeaders, HttpRequest, HttpRequestBuilder, HttpTransport}
+import com.dreizak.tgv.transport.{ Client }
+import com.dreizak.tgv.transport.http.{ HttpHeaders, HttpRequest, HttpRequestBuilder, HttpTransport }
 import com.dreizak.tgv.transport.http.sonatype.iteratee.StreamingAsyncHttpClient
 import com.dreizak.util.concurrent.CancellableFuture
 import com.weiglewilczek.slf4s.Logging
+import com.dreizak.tgv.transport.Transport
 
 /**
  * A [[com.dreizak.tgv.transport.Transport]] implementation for the HTTP protocol that uses
@@ -31,12 +32,10 @@ import com.weiglewilczek.slf4s.Logging
  * throttling (using `withThrottling`), retry requests will again be throttled.
  */
 class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
-                                            handler_ : Client[HttpRequest],
-                                            abortStrategy: AbortStrategy[HttpHeaders]) extends HttpTransport {
+                                            handler_ : Client[HttpRequest]) extends HttpTransport {
   override val handler = handler_
 
-  override protected def create(handler: Client[HttpRequest], abortStrategy: AbortStrategy[Headers]): Self =
-    new AsyncHttpTransport(client, handler, abortStrategy)
+  override protected def create(handler: Client[HttpRequest]): Self = new AsyncHttpTransport(client, handler)
 
   override def getBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.prepareGet(url), url)
   override def postBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.preparePost(url), url)
@@ -45,15 +44,12 @@ class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
 }
 
 object AsyncHttpTransport extends Logging {
-  private[sonatype] def asyncHttpHandler(client: StreamingAsyncHttpClient, abortStrategy: AbortStrategy[HttpHeaders]) =
-    new Client[HttpRequest] {
-      def checkHeaders[R](consumer: Consumer[R])(headers: Headers): Processor[R] = {
-        abortStrategy.shouldAbort(headers).map(t => throw t)
-        consumer(headers)
-      }
+  import Transport.Consumer
 
-      def submit[R](r: HttpRequest, consumer: Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Processor[R]] =
-        client.streamResponse(r.httpRequest, checkHeaders(consumer))
+  private[sonatype] def asyncHttpHandler(client: StreamingAsyncHttpClient) =
+    new Client[HttpRequest] {
+      def submit[R](r: HttpRequest, consumer: HttpHeaders => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
+        client.streamResponse(r.httpRequest, consumer)
       // FIXME: what is this again? document! 
       //          mapFailure(ex => ex match {
       //            case e: ExecutionException if e.getCause.isInstanceOf[CancelledException] => e.getCause
@@ -61,8 +57,5 @@ object AsyncHttpTransport extends Logging {
       //          })
     }
 
-  def apply(client: StreamingAsyncHttpClient) = {
-    val abortStrategy = AbortStrategy.accept2xxStatusOnly()
-    new AsyncHttpTransport(client, asyncHttpHandler(client, abortStrategy), abortStrategy)
-  }
+  def apply(client: StreamingAsyncHttpClient) = new AsyncHttpTransport(client, asyncHttpHandler(client))
 }

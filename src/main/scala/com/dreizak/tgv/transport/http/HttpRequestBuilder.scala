@@ -8,7 +8,6 @@ import com.ning.http.client.PerRequestConfig
 import com.ning.http.client.Realm.RealmBuilder
 import com.dreizak.tgv.transport.backoff.BackoffStrategy
 import com.dreizak.tgv.transport.RetryStrategy
-import com.dreizak.tgv.transport.AbortStrategy
 
 trait SignatureCalculator {
   /**
@@ -30,7 +29,6 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
                                              private val queryString: Map[String, Seq[String]] = Map(),
                                              private val backoffStrategy: Option[BackoffStrategy] = None,
                                              private val retryStrategy: Option[RetryStrategy] = None,
-                                             private val abortStrategy: Option[AbortStrategy[HttpHeaders]] = None,
                                              private val calc: Option[SignatureCalculator] = None,
                                              private val auth: Option[(String, String, AuthScheme)] = None,
                                              private val _followRedirects: Option[Boolean] = None,
@@ -78,9 +76,6 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
   def withRetryStrategy(strategy: RetryStrategy): HttpRequestBuilder =
     copy(retryStrategy = Some(strategy))
 
-  def withAbortStrategy(strategy: AbortStrategy[HttpHeaders]): HttpRequestBuilder =
-    copy(abortStrategy = Some(strategy))
-
   def build() = {
     headers.foreach(header => header._2.
       foreach(value =>
@@ -106,6 +101,6 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
           build())
     }
 
-    new HttpRequest(transport, backoffStrategy, retryStrategy, abortStrategy, nativeBuilder.build())
+    new HttpRequest(transport, backoffStrategy, retryStrategy, nativeBuilder.build())
   }
 }

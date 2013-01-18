@@ -9,7 +9,8 @@ import com.ning.http.client.AsyncHandler
 import com.ning.http.client.AsyncHandler.STATE.{ CONTINUE, ABORT }
 import play.api.libs.iteratee.{ Done, Error }
 import play.api.libs.iteratee.{ Iteratee, Step }
-import play.api.libs.iteratee.Input.El
+import play.api.libs.iteratee.Input
+import play.api.libs.iteratee.Input.{ El, Empty }
 import com.dreizak.util.concurrent.CancellableFuture
 import com.dreizak.tgv.transport.http.HttpHeaders
 
@@ -50,7 +51,8 @@ class StreamingAsyncHttpClient @Inject() (val nativeClient: AsyncHttpClient) {
    * Passes the incoming chunks that make up the response to the iteratee `consumer`.
    *
    * This method will not feed `EOF` to `consumer`; you will have to do this yourself in
-   * case the consumer iteratee relies on it.
+   * case the consumer iteratee relies on it. However, this method feeds an `Input.Empty`
+   * at the end of the response.
    *
    * This method returns a cancellable future holding the final iteratee.
    *
@@ -78,27 +80,31 @@ class StreamingAsyncHttpClient @Inject() (val nativeClient: AsyncHttpClient) {
         if (future.isCancelled) ABORT else CONTINUE
       }
 
+      def feed(input: Input[Array[Byte]]) = {
+        iteratee.pureFlatFold {
+          case Step.Done(a, e) => {
+            doneOrError = true
+            val it = Done(a, e)
+            iterateeP.trySuccess(it)
+            it
+          }
+
+          case Step.Cont(k) => {
+            k(input)
+          }
+
+          case Step.Error(e, input) => {
+            doneOrError = true
+            val it = Error(e, input)
+            iterateeP.trySuccess(it)
+            it
+          }
+        }
+      }
+
       override def onBodyPartReceived(bodyPart: HttpResponseBodyPart) = {
         if (!doneOrError) {
-          iteratee = iteratee.pureFlatFold {
-            case Step.Done(a, e) => {
-              doneOrError = true
-              val it = Done(a, e)
-              iterateeP.trySuccess(it)
-              it
-            }
-
-            case Step.Cont(k) => {
-              k(El(bodyPart.getBodyPartBytes()))
-            }
-
-            case Step.Error(e, input) => {
-              doneOrError = true
-              val it = Error(e, input)
-              iterateeP.trySuccess(it)
-              it
-            }
-          }
+          iteratee = feed(El(bodyPart.getBodyPartBytes()))
           STATE.CONTINUE
         } else {
           iteratee = null
@@ -106,7 +112,7 @@ class StreamingAsyncHttpClient @Inject() (val nativeClient: AsyncHttpClient) {
         }
       }
 
-      override def onCompleted() = Option(iteratee).map(iterateeP.trySuccess(_))
+      override def onCompleted() = Option(iteratee).map(_ => iterateeP.trySuccess(feed(Empty)))
       override def onThrowable(t: Throwable) = iterateeP.tryFailure(t)
     })
 

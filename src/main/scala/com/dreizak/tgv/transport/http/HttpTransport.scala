@@ -4,10 +4,8 @@ import com.dreizak.tgv.transport.{ Transport, TransportHeaderError }
 import com.dreizak.tgv.SchedulingContext
 import com.dreizak.util.concurrent.CancellableFuture
 
-case class HttpHeaderError(msg: String, httpStatus: Int /* FIXME: , val failingResponse: HttpResponse */ ) extends RuntimeException(msg) with TransportHeaderError {
-  // private val description = msg + " (" + httpStatus + "): " + failingResponse.getResponseBodyExcerpt(2048, "UTF-8") + "..."
-  override def toString() = "HttpTransportHeaderFailureException fixme" // FIXME description
-}
+case class HttpHeaderError(msg: String, httpStatus: Int, failingResponse: Option[String] = None)
+  extends RuntimeException(msg + " (response: " + failingResponse + ")") with TransportHeaderError
 
 /**
  * A [[com.dreizak.tgv.transport.Transport]] for the HTTP protocol.
