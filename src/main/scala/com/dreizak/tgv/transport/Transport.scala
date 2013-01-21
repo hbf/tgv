@@ -2,8 +2,10 @@ package com.dreizak.tgv.transport
 
 import com.dreizak.tgv.SchedulingContext
 import com.dreizak.tgv.transport.backoff.BackoffStrategy
+import com.dreizak.tgv.transport.backoff.ExponentialBackoffStrategy.exponentialBackoffStrategy
+import com.dreizak.tgv.transport.transform.Transform
 import com.dreizak.util.concurrent.CancellableFuture
-import com.dreizak.tgv.transport.http.sonatype.HttpResponse
+import com.dreizak.tgv.transport.RetryStrategy.retryAllBut4xx
 
 /**
  * An exception thrown by a [[com.dreizak.tgv.transport.Transport]] in case the response headers
@@ -237,19 +239,18 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    * given retry strategy.
    *
    * @param strategy retry strategy to use
-   * @param softfailureDector how soft failures are detected
+   * @param backoffStrategy the back-off strategy to use
    */
-  //def withRetryStrategy(strategy: RetryStrategy[Def], softfailureDector: RetryOracle[Def] = defaultRetryOracle): Self =
-  //    withTransform(new Retrying(strategy, softfailureDector))
+  def withRetryStrategy(strategy: RetryStrategy = retryAllBut4xx(), backoffStrategy: BackoffStrategy = exponentialBackoffStrategy(maxRetries = 20)): Self =
+    withTransform(new Retrying(strategy, backoffStrategy))
 
   /**
    * Creates a new `Transport` based on the current one that transforms requests and/or responses.
    *
    * @param transform the transform to apply
    */
-  //  def withTransform(transform: Transform[Def]): Self =
-  //    create(new Client[Def] {
-  //      def submit[R](request: Req, consumer: Req#Headers => Consumer[R][R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
-  //        transform(request, consumer, handler)
-  //    })
+  def withTransform(transform: Transform[Req]): Self =
+    create(new Client[Req] {
+      override def submit(request: Req)(implicit context: SchedulingContext) = transform(request, handler)
+    })
 }
