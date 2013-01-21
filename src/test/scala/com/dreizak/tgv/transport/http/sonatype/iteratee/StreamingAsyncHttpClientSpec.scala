@@ -17,6 +17,10 @@ import nu.rinu.test.mockito.RequestOf.requestOf
 import play.api.libs.iteratee.Iteratee
 import org.scalatest.junit.JUnitRunner
 import com.dreizak.tgv.transport.http.HttpHeaders
+import com.dreizak.util.concurrent.CancellableFuture.await
+import com.google.common.base.Strings.repeat
+import com.dreizak.tgv.transport.http.sonatype.StreamingAsyncHttpClient
+import com.dreizak.tgv.transport.http.sonatype.HttpInMemoryResponseTooLarge
 
 @RunWith(classOf[JUnitRunner])
 class StreamingAsyncHttpClientSpec extends WordSpec with MustMatchers
@@ -41,6 +45,12 @@ class StreamingAsyncHttpClientSpec extends WordSpec with MustMatchers
       val future = client.streamResponse(request, consumer)
       val iteratee = await(future)(timeout)
       result(iteratee.run, timeout) must equal(payload)
+    }
+    "abort when respones are too long (and it is not asked to stream)" in {
+      when(handler.get(requestOf("/"))).thenReturn(Response(200, payload))
+      val request = client.nativeClient.prepareGet(server.url + "/").build()
+      await(client.response(request, payload.length())).bodyAsString must equal(payload)
+      evaluating { await(client.response(request, payload.length() - 1)) } must produce[HttpInMemoryResponseTooLarge]
     }
   }
 }

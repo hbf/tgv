@@ -1,8 +1,8 @@
-package com.dreizak.tgv.transport.http.sonatype.iteratee
+package com.dreizak.tgv.transport.http.sonatype
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.TreeMap
-import scala.concurrent.{ Future, Promise }
+import scala.concurrent.Promise
 import com.google.inject.Inject
 import com.ning.http.client.{ AsyncHttpClient, FluentCaseInsensitiveStringsMap, HttpResponseBodyPart, HttpResponseHeaders, HttpResponseStatus, Request }
 import com.ning.http.client.AsyncHandler
@@ -13,6 +13,10 @@ import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Input.{ El, Empty }
 import com.dreizak.util.concurrent.CancellableFuture
 import com.dreizak.tgv.transport.http.HttpHeaders
+import com.ning.http.client.Response
+import com.ning.http.client.AsyncHandler.STATE
+
+case class HttpInMemoryResponseTooLarge(url: String)  extends RuntimeException(s"Response too long; use the streaming API to fetch URL ${url}.")
 
 /**
  * A version of <a href='https://github.com/sonatype/async-http-client'>Sonatype's AsyncHttpClient</a> that allows streaming the response using iteratees.
@@ -28,24 +32,44 @@ class StreamingAsyncHttpClient @Inject() (val nativeClient: AsyncHttpClient) {
 
   /**
    * Asynchronously reads the response into memory and afterwards completes the returned future.
-   *
-   * TODO: Commented out because it's not clear to me whether end-users can call `getResponseBody...`
-   * methods several times?!
    */
-  //  def response(r: Request): Future[AHCResponse] = {
-  //    var result = Promise[AHCResponse]()
-  //    nativeClient.executeRequest(r,
-  //      new AsyncCompletionHandler[AHCResponse]() {
-  //        override def onCompleted(response: AHCResponse) = {
-  //          result.success(response)
-  //          response
-  //        }
-  //        override def onThrowable(t: Throwable) = {
-  //          result.failure(t)
-  //        }
-  //      })
-  //    result.future
-  //  }
+  def response(r: Request, maxSizeOfNonStreamingResponses: Long): CancellableFuture[HttpResponse] = {
+    var result = Promise[HttpResponse]()
+    val future = CancellableFuture.cancellable(result)
+    val abortable = nativeClient.executeRequest(r,
+      new AsyncHandler[Unit]() {
+        val builder = new Response.ResponseBuilder()
+        var size: Long = 0
+
+        override def onThrowable(t: Throwable) = result.tryFailure(t)
+
+        override def onBodyPartReceived(bodyPart: HttpResponseBodyPart) = {
+          size = size + bodyPart.length
+          if (size > maxSizeOfNonStreamingResponses) throw new HttpInMemoryResponseTooLarge(r.getUrl)
+          builder.accumulate(bodyPart)
+          if (future.isCancelled) ABORT else CONTINUE
+        }
+
+        override def onStatusReceived(status: HttpResponseStatus) = {
+          builder.accumulate(status)
+          if (future.isCancelled) ABORT else CONTINUE
+        }
+
+        override def onHeadersReceived(headers: HttpResponseHeaders) = {
+          builder.accumulate(headers)
+          if (future.isCancelled) ABORT else CONTINUE
+        }
+
+        override def onCompleted() = {
+          val r = builder.build()
+          val headers = HttpHeaders(r.getStatusCode, ningHeadersToMap(r.getHeaders))
+          val response = new HttpResponse(headers, r.getResponseBodyAsBytes)
+          result.trySuccess(response)
+          response
+        }
+      })
+    future.onCancellation(abortable.abort _)
+  }
 
   /**
    * Passes the incoming chunks that make up the response to the iteratee `consumer`.

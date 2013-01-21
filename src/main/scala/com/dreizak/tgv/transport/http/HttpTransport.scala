@@ -3,8 +3,9 @@ package com.dreizak.tgv.transport.http
 import com.dreizak.tgv.transport.{ Transport, TransportHeaderError }
 import com.dreizak.tgv.SchedulingContext
 import com.dreizak.util.concurrent.CancellableFuture
+import com.dreizak.tgv.transport.http.sonatype.HttpResponse
 
-case class HttpHeaderError(msg: String, httpStatus: Int, failingResponse: Option[String] = None)
+case class HttpHeaderError(msg: String, httpStatus: Int, failingResponse: Option[HttpResponse] = None)
   extends RuntimeException(msg + " (response: " + failingResponse + ")") with TransportHeaderError
 
 /**
@@ -39,8 +40,8 @@ trait HttpTransport extends Transport[HttpRequest] {
    *
    * If the response headers indicate any charset, the method will use it.
    */
-  def response(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[(Headers, String)] =
-    submit(request).map { case (headers, body) => (headers, new String(body, headers.charset())) }
+  def response(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[HttpResponse] =
+    submit(request).map { case (headers, body) => new HttpResponse(headers, body) }
 
   /**
    * Submits a request to the underlying client, accumulating the response in memory and returning
@@ -49,7 +50,7 @@ trait HttpTransport extends Transport[HttpRequest] {
    * A short-hand for `response(request).map { _._2 }`.
    */
   def body(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[String] =
-    response(request).map { _._2 }
+    response(request).map { _.bodyAsString }
 }
 
 object HttpTransport {

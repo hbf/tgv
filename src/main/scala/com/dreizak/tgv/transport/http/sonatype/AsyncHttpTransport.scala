@@ -3,10 +3,17 @@ package com.dreizak.tgv.transport.http.sonatype
 import com.dreizak.tgv.SchedulingContext
 import com.dreizak.tgv.transport.{ Client }
 import com.dreizak.tgv.transport.http.{ HttpHeaders, HttpRequest, HttpRequestBuilder, HttpTransport }
-import com.dreizak.tgv.transport.http.sonatype.iteratee.StreamingAsyncHttpClient
 import com.dreizak.util.concurrent.CancellableFuture
 import com.weiglewilczek.slf4s.Logging
 import com.dreizak.tgv.transport.Transport
+import com.ning.http.client.Response
+import com.ning.http.client.AsyncHandler
+import com.ning.http.client.AsyncHandler.STATE
+import com.ning.http.client.HttpResponseBodyPart
+import com.ning.http.client.HttpResponseStatus
+import com.ning.http.client.HttpResponseHeaders
+import com.ning.http.client.AsyncCompletionHandler
+import com.dreizak.tgv.transport.http.HttpHeaderError
 
 /**
  * A [[com.dreizak.tgv.transport.Transport]] implementation for the HTTP protocol that uses
@@ -44,18 +51,25 @@ class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
 }
 
 object AsyncHttpTransport extends Logging {
-  private[sonatype] def asyncHttpHandler(client: StreamingAsyncHttpClient) =
+  private[sonatype] def asyncHttpHandler(client: StreamingAsyncHttpClient, maxSizeOfNonStreamingResponses: Long) =
     new Client[HttpRequest] {
-      def submit(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] =
-        ???
-      //      def submit[R](r: HttpRequest, consumer: HttpHeaders => Consumer[R])(implicit context: SchedulingContext): CancellableFuture[Consumer[R]] =
-      //        client.streamResponse(r.httpRequest, consumer)
-      // FIXME: what is this again? document! 
-      //          mapFailure(ex => ex match {
-      //            case e: ExecutionException if e.getCause.isInstanceOf[CancelledException] => e.getCause
-      //            case _ => ex
-      //          })
+      def submit(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[HttpResponse] =
+        client.response(request.httpRequest, maxSizeOfNonStreamingResponses).
+          // FIXME: test cancellation (download big file and cancel immediately)
+          //          mapFailure(ex => ex match {
+          //            case e: ExecutionException if e.getCause.isInstanceOf[CancelledException] => e.getCause
+          //            case _ => ex
+          //          }).
+
+          // Any message with a non-2xx status code is a error
+          map {
+            case response: HttpResponse =>
+              val status = response.headers.status
+              if (status < 200 || status >= 300)
+                throw new HttpHeaderError(s"HTTP status ${status} indicates error.", status, Some(response))
+              response
+          }
     }
 
-  def apply(client: StreamingAsyncHttpClient) = new AsyncHttpTransport(client, asyncHttpHandler(client))
+  def apply(client: StreamingAsyncHttpClient, maxSizeOfNonStreamingResponses: Long) = new AsyncHttpTransport(client, asyncHttpHandler(client, maxSizeOfNonStreamingResponses))
 }

@@ -2,7 +2,6 @@ package com.dreizak.tgv.transport.http.sonatype
 
 import java.util.concurrent.atomic.AtomicInteger
 import com.dreizak.tgv.transport.http.HttpTransport
-import com.dreizak.tgv.transport.http.sonatype.iteratee.StreamingAsyncHttpClient
 import com.google.inject.{ AbstractModule, Provides }
 import com.google.inject.Scopes.SINGLETON
 import com.google.inject.Singleton
@@ -25,7 +24,7 @@ import net.codingwell.scalaguice.ScalaModule
  *
  * == Configuration ==
  *
- *  - `tgv.transport.http.bufferLimit`
+ *  - `tgv.transport.http.maxSizeOfNonStreamingResponses` (`Long`)
  */
 class AsyncHttpTransportModule extends AbstractModule with ScalaModule {
   override def configure = {
@@ -34,5 +33,6 @@ class AsyncHttpTransportModule extends AbstractModule with ScalaModule {
 
   @Singleton
   @Provides
-  def asyncHttpTransport(client: StreamingAsyncHttpClient): HttpTransport = AsyncHttpTransport(client)
+  def asyncHttpTransport(client: StreamingAsyncHttpClient, @Named("tgv.transport.http.maxSizeOfNonStreamingResponses") maxSizeOfNonStreamingResponses: Long): HttpTransport =
+    AsyncHttpTransport(client, maxSizeOfNonStreamingResponses)
 }

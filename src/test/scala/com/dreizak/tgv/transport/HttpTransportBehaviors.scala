@@ -14,6 +14,7 @@ import com.dreizak.util.concurrent.CancellableFuture.await
 import com.dreizak.tgv.infrastructure.testing.ExecutionContextForEach
 import com.google.common.base.Strings.repeat
 import com.dreizak.tgv.transport.http.HttpHeaderError
+import com.dreizak.tgv.transport.http.sonatype.HttpInMemoryResponseTooLarge
 
 /**
  * Base test for `Transport`s.
@@ -27,7 +28,13 @@ trait HttpTransportBehaviors {
 
   val transport: HttpTransport
 
-  def httpTransport() = {
+  def httpTransport(maxSizeOfNonStreamingResponses: Long) = {
+    "handle a simple GET request (not mocked)" in {
+      val request = transport.getBuilder("http://en.wikipedia.com").build
+      val response = await(transport.response(request))
+      response.headers.status must be(200)
+      response.bodyAsString.toLowerCase must include("wikipedia")
+    }
     "handle a simple GET request" in {
       when(handler.get(requestOf("/"))).thenReturn(Response(200, "yes"))
       val request = transport.getBuilder(server.url + "/").build
@@ -38,6 +45,12 @@ trait HttpTransportBehaviors {
       when(handler.get(requestOf("/"))).thenReturn(Response(200, payload))
       val request = transport.getBuilder(server.url + "/").build
       await(transport.body(request)) must equal(payload)
+    }
+    "fail the non-streaming API is used and the response is huge" in {
+      val payload = repeat("f", maxSizeOfNonStreamingResponses.toInt + 1)
+      when(handler.get(requestOf("/"))).thenReturn(Response(200, payload))
+      val request = transport.getBuilder(server.url + "/").build
+      evaluating { await(transport.body(request)) } must produce[HttpInMemoryResponseTooLarge]
     }
     "fail on non-2xx responses (404)" in {
       when(handler.get(requestOf("/"))).thenReturn(Response(404))

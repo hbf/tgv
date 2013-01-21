@@ -6,7 +6,7 @@ import com.dreizak.tgv.transport.Client
 import com.dreizak.tgv.SchedulingContext
 
 /**
- * Transforms a `Request` submitted to a [[com.dreizak.deepar.infrastructure.transport.Transport]]
+ * Transforms a `Request` submitted to a [[com.dreizak.tgv.transport.Transport]]
  * and/or its response (both in case of success of failure).
  *
  * TODO: this is likely to change when streaming gets implemented; to be on the safe (safer) side,

@@ -9,17 +9,23 @@ import com.dreizak.tgv.transport.http.HttpTransport
 import com.dreizak.util.service.ServiceRegistryModule
 import com.google.inject.Inject
 import org.scalatest.junit.JUnitRunner
+import com.google.inject.name.Names.named
 
 @RunWith(classOf[JUnitRunner])
 class AsyncHttpTransportSpec extends ServiceRegistryModule with WordSpec with MustMatchers
   with GuiceInjection with MockServer with TemporaryFolders with ExecutionContextForEach with HttpTransportBehaviors {
 
-  def configure() = install(new AsyncHttpTransportModule())
+  val maxSizeOfNonStreamingResponses = 10 * 1024 * 1024L
+
+  def configure() = {
+    bindConstant().annotatedWith(named("tgv.transport.http.maxSizeOfNonStreamingResponses")).to(maxSizeOfNonStreamingResponses)
+    install(new AsyncHttpTransportModule())
+  }
 
   @Inject
   override val transport: HttpTransport = null
 
   "A Sontatype AsyncHttpClient transport" should {
-    behave like httpTransport()
+    behave like httpTransport(maxSizeOfNonStreamingResponses)
   }
 }

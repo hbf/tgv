@@ -3,6 +3,7 @@ package com.dreizak.tgv.transport
 import com.dreizak.tgv.SchedulingContext
 import com.dreizak.tgv.transport.backoff.BackoffStrategy
 import com.dreizak.util.concurrent.CancellableFuture
+import com.dreizak.tgv.transport.http.sonatype.HttpResponse
 
 /**
  * An exception thrown by a [[com.dreizak.tgv.transport.Transport]] in case the response headers
@@ -53,15 +54,20 @@ trait TransportRequest {
  */
 trait Client[Req <: TransportRequest] {
   type Headers = Req#Headers
+  type InMemoryResponse = (Headers, Array[Byte])
 
   /**
    * Submits the given request, reads the response (accumulating it in memory) and returns it wrapped in a future.
+   *
+   * The implementation may or may not have a limit in place that prevents reading responses that are longer
+   * than a certain threshold. Refer to the streaming API (todo) for methods to handle large responses in
+   * constant memory.
    *
    * TODO: introduce a new method for streaming and (possibly) implement this method here by using the streaming one
    *
    * @see [[com.dreizak.tgv.transport.Transport]]
    */
-  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])]
+  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[InMemoryResponse]
 }
 
 /**
@@ -199,7 +205,7 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    *
    * @return a future holding the result of the computation or an exception in case of a failure
    */
-  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] =
+  def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[InMemoryResponse] =
     handler.submit(request)
 
   /**
