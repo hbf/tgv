@@ -1,13 +1,13 @@
 package com.dreizak.util.concurrent
 
-import scala.concurrent.{ Future, Promise }
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration.DurationInt
 import org.junit.runner.RunWith
 import org.scalatest.WordSpec
 import org.scalatest.matchers.MustMatchers
 import com.dreizak.tgv.infrastructure.testing.ExecutionContextForEach
 import com.dreizak.tgv.infrastructure.testing.TestingUtils.await
-import com.dreizak.util.concurrent.CancellableFuture.{ cancellable, delay }
+import com.dreizak.util.concurrent.CancellableFuture.{cancellable, delay}
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
@@ -213,7 +213,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
 
       val reason = new CancelledException("oops")
       f.cancel(reason)
-      evaluating { await(f2.future, 10 seconds) } must produce[CancelledException]
+      evaluating { await(f2.future) } must produce[CancelledException]
       f.isCancelled() must be(true)
       // Note: f1 need not be cancelled (in the current implementatino it is not)!.
       f2.cancellableFuture.isCancelled() must be(true) // Compare with previous test.
@@ -255,7 +255,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
 
       val reason = new CancelledException("oops")
       f.cancel(reason)
-      evaluating { await(f2.future, 10 seconds) } must produce[CancelledException]
+      evaluating { await(f2.future) } must produce[CancelledException]
       f.isCancelled() must be(true)
       // Note: f1 need not be cancelled (in the current implementatino it is not)!.
       f2.cancellableFuture.isCancelled() must be(true) // Compare with previous test.
@@ -268,8 +268,8 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
       val f2 = delay(750 millis).map { x => p2.success(()); "bar" }
       val reason = new CancelledException("oops")
       f1.cancel(reason)
-      evaluating { await(f1.future, 10 seconds) } must produce[CancelledException]
-      await(f2.future, 10 seconds) must equal("bar")
+      evaluating { await(f1.future) } must produce[CancelledException]
+      await(f2.future) must equal("bar")
       f1.isCancelled() must be(true)
       f2.isCancelled() must be(false)
       p1.isCompleted must be(false)
