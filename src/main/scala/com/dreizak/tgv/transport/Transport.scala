@@ -6,6 +6,8 @@ import com.dreizak.tgv.transport.backoff.ExponentialBackoffStrategy.exponentialB
 import com.dreizak.tgv.transport.transform.Transform
 import com.dreizak.util.concurrent.CancellableFuture
 import com.dreizak.tgv.transport.RetryStrategy.retryAllBut4xx
+import com.dreizak.tgv.transport.throttle.Rate
+import scala.concurrent.duration._
 
 /**
  * An exception thrown by a [[com.dreizak.tgv.transport.Transport]] in case the response headers
@@ -219,8 +221,8 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    *
    * @param maxNrOfParallelRequests the maximal number of concurrently executing requests
    */
-  //def withLimit(maxNrOfParallelRequests: Int)(implicit context: SchedulingContext): Self //=
-  //withThrottling(Rate(maxNrOfParallelRequests, 1 milli))
+  def withLimit(maxNrOfParallelRequests: Int)(implicit context: SchedulingContext): Self =
+    withThrottling(Rate(maxNrOfParallelRequests, 1 milli))
 
   /**
    * Creates a new `Transport` based on the current one that throttles request such that
@@ -231,8 +233,8 @@ trait Transport[Req <: TransportRequest] extends Client[Req] {
    *
    * @param rate the maximal rate that is allowed
    */
-  //final def withThrottling(rate: Rate): Self =
-  //  withTransform(new Throttling(rate, handler))
+  final def withThrottling(rate: Rate): Self =
+    withTransform(new Throttling(rate, handler))
 
   /**
    * Creates a new `Transport` based on the current one that retries request according to the
