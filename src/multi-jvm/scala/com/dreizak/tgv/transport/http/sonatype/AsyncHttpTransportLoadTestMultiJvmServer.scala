@@ -16,12 +16,19 @@ class AsyncHttpTransportLoadTestMultiJvmServer extends WordSpec with MustMatcher
 
   "A Sontatype AsyncHttpClient transport" should {
     "handle load" in {
+      //waitForDebugging()
       enterBarrier(this, "AsyncHttpTransportLoadTestMultiJvm")
       println("Server ready.")
       when(handler.get(requestOf("/"))).thenReturn(Response(200, "yes"))
       exitBarrier(this, "AsyncHttpTransportLoadTestMultiJvm")
       println("Server about to stop...")
     }
+  }
+  def waitForDebugging() = {
+    import java.lang.management.ManagementFactory
+    println("Waiting to start... (pid " + ManagementFactory.getRuntimeMXBean().getName() + ")...")
+    Thread.sleep(20000)
+    println("Starting...")
   }
 }
 

@@ -4,10 +4,9 @@ import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, Suite }
 import org.scalatest.mock.MockitoSugar.mock
 import nu.rinu.test.{ HttpServer, HttpServerHandler, Response }
 import scala.io.Source
-// FIXME
-//import com.dreizak.tgv.transport.http.HttpTransportDefinition
-//import com.dreizak.tgv.transport.Transport
-//import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
+import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
+import com.dreizak.tgv.transport.Transport
+import com.dreizak.tgv.transport.http.HttpRequest
 
 /**
  * Mixin for ScalaTest `Suite`s that provides a HTTP server, running on a free local port,
@@ -44,9 +43,7 @@ trait MockServer extends Suite with BeforeAndAfterEach with BeforeAndAfterAll {
     Response(body = Source.fromURL(resource, "UTF-8").mkString)
   }
 
-  // FIXME
-  // val mockUrlTransfom = transformUrl[HttpTransportDefinition](_.replaceFirst("(http(s)?://[^/]+)", server.url))
+  val mockUrlTransfom = transformUrl[HttpRequest](_.replaceFirst("(http(s)?://[^/]+)", server.url))
 
-  // FIXME
-  // def mockTransport(transport: Transport[HttpTransportDefinition]) = transport.withTransform(mockUrlTransfom)
+  def mockTransport(transport: Transport[HttpRequest]) = transport.withTransform(mockUrlTransfom)
 }

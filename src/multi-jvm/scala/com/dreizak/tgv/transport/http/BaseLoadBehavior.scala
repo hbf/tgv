@@ -19,9 +19,9 @@ trait BaseLoadBehavior {
 
   def httpTransportUnderLoadMultiJvm(barrier: String, port: Int) = {
     "make 50k requests at 1k/sec" in {
-      // waitForDebugging()
+      //waitForDebugging()
       enterBarrier(BaseLoadBehavior.this, barrier)
-      val N = 1 //10000
+      val N = 10000
 
       val atMost1kParallelRequests = transport.withThrottling(1000 per (1 milli))
 
