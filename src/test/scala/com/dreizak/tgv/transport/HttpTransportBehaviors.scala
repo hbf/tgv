@@ -9,6 +9,7 @@ import com.dreizak.tgv.transport.http.{ HttpHeaderError, HttpTransport }
 import com.dreizak.tgv.transport.http.sonatype.HttpInMemoryResponseTooLarge
 import com.dreizak.util.concurrent.CancellableFuture.await
 import com.google.common.base.Strings.repeat
+import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
 
 import nu.rinu.test.Response
 import nu.rinu.test.mockito.RequestOf.requestOf
@@ -58,5 +59,37 @@ trait HttpTransportBehaviors {
 
     // TODO: check redirection (3xx)
     // TODO test when no http status code is provided
+  }
+
+  def httpTransportWithTransforms() = {
+    def createHierarchy() = {
+      val middle = transport.withTransform(transformUrl(_ + "m"))
+      val top = middle.withTransform(transformUrl(_ + "t"))
+      (transport, middle, top)
+    }
+
+    "apply no transforms per default" in {
+      val (bottom, middle, top) = createHierarchy()
+
+      when(handler.get(requestOf("/"))).thenReturn(Response(200, "OK"))
+      val request = bottom.getBuilder(server.url + "/").build
+      await(bottom.body(request)) must equal("OK")
+    }
+    "apply per-request transforms in the order of the chaining of the involved transports (1)" in {
+      val (bottom, middle, top) = createHierarchy()
+
+      when(handler.get(requestOf("/m"))).thenReturn(Response(200, "OK"))
+
+      val request = middle.getBuilder(server.url + "/").build
+      await(middle.body(request)) must equal("OK")
+    }
+    "apply per-request transforms in the order of the chaining of the involved transports (2)" in {
+      val (bottom, middle, top) = createHierarchy()
+
+      when(handler.get(requestOf("/tm"))).thenReturn(Response(200, "OK"))
+
+      val request = top.getBuilder(server.url + "/").build
+      await(top.body(request)) must equal("OK")
+    }
   }
 }

@@ -24,7 +24,7 @@ trait SignatureCalculator {
  */
 case class HttpRequestBuilder private[http] (private val transport: HttpTransport,
                                              private val nativeBuilder: AsyncHttpClient#BoundRequestBuilder,
-                                             private val url: String,
+                                             val url: String,
                                              private val headers: Map[String, Seq[String]] = Map(),
                                              private val queryString: Map[String, Seq[String]] = Map(),
                                              private val backoffStrategy: Option[BackoffStrategy] = None,
@@ -37,7 +37,7 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
 
   def sign(calc: SignatureCalculator): HttpRequestBuilder = copy(calc = Some(calc))
 
-  def withUrl(ur: String): HttpRequestBuilder = copy(url = url)
+  def withUrl(url: String): HttpRequestBuilder = copy(url = url)
 
   def withAuth(username: String, password: String, scheme: AuthScheme): HttpRequestBuilder =
     copy(auth = Some((username, password, scheme)))
@@ -50,7 +50,14 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
     copy(headers = headers)
   }
 
+  // TODO: document that this replaces whatever is currently stored under `key` while `addQueryString` adds
+  // additional values
   def withQueryString(parameters: (String, String)*): HttpRequestBuilder =
+    copy(queryString = parameters.foldLeft(queryString) {
+      case (m, (k, v)) => m + (k -> Seq(v))
+    })
+
+  def addQueryString(parameters: (String, String)*): HttpRequestBuilder =
     copy(queryString = parameters.foldLeft(queryString) {
       case (m, (k, v)) => m + (k -> (v +: m.get(k).getOrElse(Nil)))
     })
@@ -77,6 +84,7 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
     copy(retryStrategy = Some(strategy))
 
   def build() = {
+    nativeBuilder.setUrl(url)
     headers.foreach(header => header._2.
       foreach(value =>
         nativeBuilder.addHeader(header._1, value)

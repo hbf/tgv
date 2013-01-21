@@ -23,5 +23,6 @@ class AsyncHttpTransportSpec extends ServiceRegistryModule with WordSpec with Mu
 
   "A Sontatype AsyncHttpClient transport" should {
     behave like httpTransport(MaxSizeOfNonStreamingResponses)
+    behave like httpTransportWithTransforms()
   }
 }

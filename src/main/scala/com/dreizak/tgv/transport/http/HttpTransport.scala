@@ -54,5 +54,5 @@ trait HttpTransport extends Transport[HttpRequest] {
 }
 
 object HttpTransport {
-  implicit def toRequest(builder: HttpRequestBuilder) = builder.build()
+  implicit def toRequest[Req <: HttpRequest](builder: HttpRequestBuilder) = builder.build()
 }
