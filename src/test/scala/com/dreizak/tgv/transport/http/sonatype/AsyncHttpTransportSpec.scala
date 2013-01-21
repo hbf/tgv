@@ -19,6 +19,9 @@ class AsyncHttpTransportSpec extends ServiceRegistryModule with WordSpec with Mu
 
   def configure() = {
     bindConstant().annotatedWith(named("tgv.transport.http.maxSizeOfNonStreamingResponses")).to(maxSizeOfNonStreamingResponses)
+    bindConstant().annotatedWith(named("tgv.transport.http.allowPoolingConnection")).to(true)
+    bindConstant().annotatedWith(named("tgv.transport.http.maxConnectionsTotal")).to(300)
+    install(new AsyncHttpModule())
     install(new AsyncHttpTransportModule())
   }
 

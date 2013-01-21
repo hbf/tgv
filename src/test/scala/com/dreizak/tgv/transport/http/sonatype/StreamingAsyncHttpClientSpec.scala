@@ -1,4 +1,4 @@
-package com.dreizak.tgv.transport.http.sonatype.iteratee
+package com.dreizak.tgv.transport.http.sonatype
 
 import scala.Array.canBuildFrom
 import scala.concurrent.Await.result
@@ -7,6 +7,7 @@ import org.mockito.Mockito.when
 import org.scalatest.WordSpec
 import org.scalatest.matchers.MustMatchers
 import com.dreizak.tgv.infrastructure.testing.{ ExecutionContextForEach, MockServer }
+import com.dreizak.tgv.transport.http.HttpHeaders
 import com.dreizak.util.concurrent.CancellableFuture.await
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.base.Strings.repeat
@@ -16,11 +17,6 @@ import nu.rinu.test.Response
 import nu.rinu.test.mockito.RequestOf.requestOf
 import play.api.libs.iteratee.Iteratee
 import org.scalatest.junit.JUnitRunner
-import com.dreizak.tgv.transport.http.HttpHeaders
-import com.dreizak.util.concurrent.CancellableFuture.await
-import com.google.common.base.Strings.repeat
-import com.dreizak.tgv.transport.http.sonatype.StreamingAsyncHttpClient
-import com.dreizak.tgv.transport.http.sonatype.HttpInMemoryResponseTooLarge
 
 @RunWith(classOf[JUnitRunner])
 class StreamingAsyncHttpClientSpec extends WordSpec with MustMatchers

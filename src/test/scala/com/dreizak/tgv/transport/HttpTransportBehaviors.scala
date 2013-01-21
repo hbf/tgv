@@ -1,26 +1,23 @@
 package com.dreizak.tgv.transport
 
-import org.scalatest.FlatSpec
-import org.scalatest.WordSpec
+import org.mockito.Mockito.when
+import org.scalatest.{ Finders, WordSpec }
 import org.scalatest.matchers.MustMatchers
-import com.google.inject.Inject
-import com.dreizak.tgv.ExecutionContextService
+
+import com.dreizak.tgv.infrastructure.testing.{ ExecutionContextForEach, MockServer }
+import com.dreizak.tgv.transport.http.{ HttpHeaderError, HttpTransport }
+import com.dreizak.tgv.transport.http.sonatype.HttpInMemoryResponseTooLarge
+import com.dreizak.util.concurrent.CancellableFuture.await
+import com.google.common.base.Strings.repeat
+
 import nu.rinu.test.Response
 import nu.rinu.test.mockito.RequestOf.requestOf
-import org.mockito.Mockito.when
-import com.dreizak.tgv.transport.http.HttpTransport
-import com.dreizak.tgv.infrastructure.testing.MockServer
-import com.dreizak.util.concurrent.CancellableFuture.await
-import com.dreizak.tgv.infrastructure.testing.ExecutionContextForEach
-import com.google.common.base.Strings.repeat
-import com.dreizak.tgv.transport.http.HttpHeaderError
-import com.dreizak.tgv.transport.http.sonatype.HttpInMemoryResponseTooLarge
 
 /**
  * Base test for `Transport`s.
  *
  * An implementation of [[com.dreizak.tgv.transport.Transport]] should be tested with at least the behavior tests that are
- * exposed (as methods) in this class. You can use `httpTransport` to run all tests, see for example
+ * exposed (as methods, like `httpTransport`) in this class, see for example
  * [[com.dreizak.tgv.transport.http.sonatype.AsyncHttpTransportSpec]].
  */
 trait HttpTransportBehaviors {
@@ -30,7 +27,7 @@ trait HttpTransportBehaviors {
 
   def httpTransport(maxSizeOfNonStreamingResponses: Long) = {
     "handle a simple GET request (not mocked)" in {
-      val request = transport.getBuilder("http://en.wikipedia.com").build
+      val request = transport.getBuilder("http://www.wikipedia.com").build
       val response = await(transport.response(request))
       response.headers.status must be(200)
       response.bodyAsString.toLowerCase must include("wikipedia")

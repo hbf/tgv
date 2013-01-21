@@ -6,7 +6,7 @@ import com.dreizak.util.concurrent.CancellableFuture
 import com.dreizak.tgv.transport.http.sonatype.HttpResponse
 
 case class HttpHeaderError(msg: String, httpStatus: Int, failingResponse: Option[HttpResponse] = None)
-  extends RuntimeException(msg + " (response: " + failingResponse + ")") with TransportHeaderError
+  extends RuntimeException(msg + " (response: " + failingResponse.map(_.bodyAsString) + ")") with TransportHeaderError
 
 /**
  * A [[com.dreizak.tgv.transport.Transport]] for the HTTP protocol.
