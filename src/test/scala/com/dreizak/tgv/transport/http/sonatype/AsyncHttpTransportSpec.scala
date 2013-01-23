@@ -11,10 +11,12 @@ import com.google.inject.Inject
 import org.scalatest.junit.JUnitRunner
 import com.google.inject.name.Names.named
 import com.dreizak.tgv.transport.http.sonatype.AsyncHttpTransportTestingModule.MaxSizeOfNonStreamingResponses
+import com.dreizak.tgv.transport.HttpTransportLoadBehaviors
 
 @RunWith(classOf[JUnitRunner])
 class AsyncHttpTransportSpec extends ServiceRegistryModule with WordSpec with MustMatchers
-  with GuiceInjection with MockServer with TemporaryFolders with ExecutionContextForEach with HttpTransportBehaviors {
+  with GuiceInjection with MockServer with ExecutionContextForEach
+  with HttpTransportBehaviors with HttpTransportLoadBehaviors {
 
   def configure() = install(AsyncHttpTransportTestingModule)
 
@@ -22,7 +24,8 @@ class AsyncHttpTransportSpec extends ServiceRegistryModule with WordSpec with Mu
   override val transport: HttpTransport = null
 
   "A Sontatype AsyncHttpClient transport" should {
-    behave like httpTransport(MaxSizeOfNonStreamingResponses)
-    behave like httpTransportWithTransforms()
+    //behave like httpTransport(MaxSizeOfNonStreamingResponses)
+    //behave like httpTransportWithTransforms()
+    behave like httpTransportUnderLoad()
   }
 }

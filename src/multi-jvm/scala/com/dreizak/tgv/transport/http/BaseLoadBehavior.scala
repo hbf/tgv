@@ -2,12 +2,12 @@ package com.dreizak.tgv.transport.http
 
 import scala.concurrent.Await.result
 import scala.concurrent.Future.sequence
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration._
 import org.scalatest.WordSpec
 import org.scalatest.matchers.MustMatchers
 import com.dreizak.tgv.infrastructure.testing.{ ExecutionContextForEach, MockServer }
 import com.dreizak.tgv.transport.http.HttpTransport.toRequest
-import com.dreizak.tgv.transport.throttle.Rate.ToRate
+import com.dreizak.tgv.transport.throttle.Rate._
 import com.dreizak.util.concurrent.CancelledException
 import com.google.common.base.Strings
 import com.dreizak.tgv.infrastructure.testing.MultiJvmTestBarrier
@@ -23,9 +23,9 @@ trait BaseLoadBehavior {
       enterBarrier(BaseLoadBehavior.this, barrier)
       val N = 10000
 
-      val atMost1kParallelRequests = transport.withThrottling(1000 per (1 milli))
+      val atMost1ks = transport.withThrottling(1000 per (1 milli))
 
-      val reqs = (1 to N).map { _ => transport.body(transport.getBuilder(s"http://localhost:${port}/")).future }
+      val reqs = (1 to N).map { _ => atMost1ks.body(atMost1ks.getBuilder(s"http://localhost:${port}/")).future }
 
       val results = result(sequence(reqs), 100 seconds)
       results must have size (N)
@@ -40,8 +40,8 @@ trait BaseLoadBehavior {
       enterBarrier(BaseLoadBehavior.this, barrier)
       val N = 0 //5000
 
-      val atMost1kParallelRequests = transport.withThrottling(10 per (100 millis))
-      def makeReq() = transport.body(transport.getBuilder(s"http://localhost:${port}/long"))
+      val atMost1ks = transport.withThrottling(10 per (100 millis))
+      def makeReq() = atMost1ks.body(atMost1ks.getBuilder(s"http://localhost:${port}/long"))
       val response = Strings.repeat("yes", 10000)
 
       println("Making " + N + " requests...")

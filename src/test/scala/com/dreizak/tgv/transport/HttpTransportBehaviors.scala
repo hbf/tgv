@@ -3,16 +3,20 @@ package com.dreizak.tgv.transport
 import org.mockito.Mockito.when
 import org.scalatest.{ Finders, WordSpec }
 import org.scalatest.matchers.MustMatchers
-
 import com.dreizak.tgv.infrastructure.testing.{ ExecutionContextForEach, MockServer }
 import com.dreizak.tgv.transport.http.{ HttpHeaderError, HttpTransport }
 import com.dreizak.tgv.transport.http.sonatype.HttpInMemoryResponseTooLarge
 import com.dreizak.util.concurrent.CancellableFuture.await
 import com.google.common.base.Strings.repeat
 import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
-
+import com.dreizak.tgv.transport.throttle.Rate._
 import nu.rinu.test.Response
 import nu.rinu.test.mockito.RequestOf.requestOf
+import scala.concurrent.Await.result
+import scala.concurrent.Future.sequence
+import scala.concurrent.duration._
+import com.google.inject.Inject
+import com.dreizak.tgv.transport.http.sonatype.StreamingAsyncHttpClient
 
 /**
  * Base test for `Transport`s.

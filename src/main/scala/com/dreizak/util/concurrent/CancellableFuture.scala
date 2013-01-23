@@ -1,14 +1,14 @@
 package com.dreizak.util.concurrent
 
 import java.util.concurrent.TimeUnit
-
 import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.{ Failure, Success, Try }
 import scala.util.control.NonFatal
-
 import com.dreizak.tgv.SchedulingContext
+import java.util.concurrent.RejectedExecutionException
+import scala.collection.generic.CanBuildFrom
 
 /**
  * A Scala future that is cancellable.
@@ -94,9 +94,9 @@ trait CancellableFuture[+T] extends Cancellable {
     future.onComplete {
       case res =>
         try {
-          p success f(res)
+          p trySuccess f(res)
         } catch {
-          case NonFatal(t) => p failure t
+          case NonFatal(t) => p tryFailure t
         }
     }(executor)
 
@@ -115,11 +115,11 @@ trait CancellableFuture[+T] extends Cancellable {
           result.onCancellation(intermediate.cancel _)
 
           intermediate.future.onComplete {
-            case Failure(t) => p failure t
-            case Success(r) => p success r
+            case Failure(t) => p tryFailure t
+            case Success(r) => p trySuccess r
           }(internalExecutor)
         } catch {
-          case NonFatal(t) => p failure t
+          case NonFatal(t) => p tryFailure t
         }
     }(executor)
 
@@ -142,7 +142,7 @@ trait CancellableFuture[+T] extends Cancellable {
       val result = wrap(p.future)
 
       future.onComplete {
-        case f: Failure[_] => p complete f.asInstanceOf[Failure[S]]
+        case f: Failure[_] => p tryComplete f.asInstanceOf[Failure[S]]
         case Success(v) =>
           try {
             val intermediate = f(v)
@@ -150,11 +150,11 @@ trait CancellableFuture[+T] extends Cancellable {
             result.onCancellation(intermediate.cancel _)
 
             intermediate.future.onComplete({
-              case f: Failure[_] => p complete f.asInstanceOf[Failure[S]]
-              case Success(v) => p success v
+              case f: Failure[_] => p tryComplete f.asInstanceOf[Failure[S]]
+              case Success(v) => p trySuccess v
             })(internalExecutor)
           } catch {
-            case NonFatal(t) => p failure t
+            case NonFatal(t) => p tryFailure t
           }
       }(executor)
 
@@ -189,11 +189,11 @@ trait CancellableFuture[+T] extends Cancellable {
 
             result.onCancellation(intermediate.cancel _)
 
-            p completeWith intermediate.future
+            p tryCompleteWith intermediate.future
           } catch {
-            case NonFatal(t) => p failure t
+            case NonFatal(t) => p tryFailure t
           }
-        case otherwise => p complete otherwise
+        case otherwise => p tryComplete otherwise
       }(executor)
 
       result
@@ -260,8 +260,12 @@ private[concurrent] final class CancellableFutureImpl[T](val future: Future[T]) 
 object CancellableFuture {
   private[concurrent] object InternalCallbackExecutor extends ExecutionContext {
     override def execute(runnable: Runnable): Unit = runnable.run()
-    override def reportFailure(t: Throwable): Unit =
-      throw new IllegalStateException("problem in com.dreizak.util.concurrent internal callback", t)
+    override def reportFailure(t: Throwable): Unit = t match {
+      case _: RejectedExecutionException =>
+        throw new IllegalStateException("Problem in com.dreizak.util.concurrent internal callback; have you maybe shut down the executor?", t)
+      case _ =>
+        throw new IllegalStateException("Problem in com.dreizak.util.concurrent internal callback.", t)
+    }
   }
 
   /**
@@ -316,7 +320,7 @@ object CancellableFuture {
     val promise = Promise[Unit]()
     val receipt = context.schedule(new Runnable() {
       override def run() {
-        promise.success(())
+        promise.trySuccess(())
       }
     }, timespan.toMillis, TimeUnit.MILLISECONDS)
     cancellable(promise).onCancellation(cause => receipt.cancel(true))
