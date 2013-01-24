@@ -2,7 +2,7 @@ package com.dreizak.tgv.infrastructure.testing
 
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, Suite }
 import org.scalatest.mock.MockitoSugar.mock
-import nu.rinu.test.{ HttpServer, HttpServerHandler, Response }
+import com.dreizak.util.testing.http.{ HttpServer, HttpServerHandler, Response }
 import scala.io.Source
 import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
 import com.dreizak.tgv.transport.Transport

@@ -1,5 +1,5 @@
-// Taken from https://github.com/rinunu/mock-http-server/tree/2d8ae2382b1b6f9c40332ff717b6217d519a5038
-package nu.rinu.test
+// Adapted from https://github.com/rinunu/mock-http-server/tree/2d8ae2382b1b6f9c40332ff717b6217d519a5038
+package com.dreizak.util.testing.http
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse

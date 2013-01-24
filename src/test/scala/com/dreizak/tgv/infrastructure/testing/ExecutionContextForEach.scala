@@ -24,7 +24,6 @@ trait ExecutionContextForEach extends BeforeAndAfterEach {
   }
 
   override def afterEach = {
-    println("================= SHUTDOWN =============")
     service.stop()
     super.afterEach()
   }

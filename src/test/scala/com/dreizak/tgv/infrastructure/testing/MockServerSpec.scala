@@ -1,21 +1,14 @@
 package com.dreizak.tgv.infrastructure.testing
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.mockito.Mockito.when
-import org.scalatest.WordSpec
+import org.scalatest.{ Finders, WordSpec }
 import org.scalatest.matchers.MustMatchers
-
 import com.dreizak.tgv.ExecutionContextService
-import com.dreizak.tgv.infrastructure.testing.TestingUtils.await
 import com.dreizak.util.service.ServiceRegistryModule
-import com.google.inject.Inject
-// FIXME
-//import com.dreizak.tgv.transport.http.HttpTransport
-//import com.dreizak.tgv.transport.http.HttpTransport._
-
-import nu.rinu.test.Response
-import nu.rinu.test.mockito.RequestOf.requestOf
+import com.dreizak.util.testing.http.Response
+import com.dreizak.util.testing.http.mockito.RequestOf.requestOf
+import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class MockServerSpec extends ServiceRegistryModule with WordSpec with MustMatchers

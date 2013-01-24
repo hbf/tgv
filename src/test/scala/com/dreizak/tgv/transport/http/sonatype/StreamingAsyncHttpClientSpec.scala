@@ -13,8 +13,8 @@ import com.google.common.base.Charsets.UTF_8
 import com.google.common.base.Strings.repeat
 import com.ning.http.client.AsyncHttpClient
 import com.ning.http.client.AsyncHttpClientConfig.Builder
-import nu.rinu.test.Response
-import nu.rinu.test.mockito.RequestOf.requestOf
+import com.dreizak.util.testing.http.Response
+import com.dreizak.util.testing.http.mockito.RequestOf.requestOf
 import play.api.libs.iteratee.Iteratee
 import org.scalatest.junit.JUnitRunner
 

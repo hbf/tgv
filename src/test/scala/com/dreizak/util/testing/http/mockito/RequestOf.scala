@@ -1,11 +1,11 @@
-// Taken from https://github.com/rinunu/mock-http-server/tree/2d8ae2382b1b6f9c40332ff717b6217d519a5038
-package nu.rinu.test.mockito
+// Adapted from https://github.com/rinunu/mock-http-server/tree/2d8ae2382b1b6f9c40332ff717b6217d519a5038
+package com.dreizak.util.testing.http.mockito
 
 import org.hamcrest.BaseMatcher
 import org.hamcrest.Description
 import org.mockito.Matchers.argThat
 
-import nu.rinu.test.Request
+import com.dreizak.util.testing.http.Request
 
 /**
  * hamcrest 用の Matcher

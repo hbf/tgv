@@ -5,13 +5,13 @@ import org.mockito.Mockito.when
 import org.scalatest.{ Finders, WordSpec }
 import org.scalatest.matchers.MustMatchers
 import com.dreizak.tgv.infrastructure.testing.{ MockServer, MultiJvmTestBarrier }
-import nu.rinu.test.Response
-import nu.rinu.test.mockito.RequestOf.requestOf
+import com.dreizak.util.testing.http.Response
+import com.dreizak.util.testing.http.mockito.RequestOf.requestOf
 import org.scalatest.junit.JUnitRunner
 import com.google.common.base.Strings
-import nu.rinu.test.HttpServer
-import nu.rinu.test.HttpServerHandler
-import nu.rinu.test.Request
+import com.dreizak.util.testing.http.HttpServer
+import com.dreizak.util.testing.http.HttpServerHandler
+import com.dreizak.util.testing.http.Request
 
 // Note: we cannot use `MockServer` here as it remembers the history and would soon run out of memory.
 @RunWith(classOf[JUnitRunner])

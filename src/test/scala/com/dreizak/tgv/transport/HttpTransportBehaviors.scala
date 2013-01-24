@@ -10,8 +10,8 @@ import com.dreizak.util.concurrent.CancellableFuture.await
 import com.google.common.base.Strings.repeat
 import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
 import com.dreizak.tgv.transport.throttle.Rate._
-import nu.rinu.test.Response
-import nu.rinu.test.mockito.RequestOf.requestOf
+import com.dreizak.util.testing.http.Response
+import com.dreizak.util.testing.http.mockito.RequestOf.requestOf
 import scala.concurrent.Await.result
 import scala.concurrent.Future.sequence
 import scala.concurrent.duration._

@@ -10,16 +10,16 @@ import com.dreizak.util.concurrent.CancellableFuture.await
 import com.google.common.base.Strings.repeat
 import com.dreizak.tgv.transport.http.transform.UrlTransform.transformUrl
 import com.dreizak.tgv.transport.throttle.Rate._
-import nu.rinu.test.Response
-import nu.rinu.test.mockito.RequestOf.requestOf
+import com.dreizak.util.testing.http.Response
+import com.dreizak.util.testing.http.mockito.RequestOf.requestOf
 import scala.concurrent.Await.result
 import scala.concurrent.Future.sequence
 import scala.concurrent.duration._
 import com.google.inject.Inject
 import com.dreizak.tgv.transport.http.sonatype.StreamingAsyncHttpClient
-import nu.rinu.test.HttpServer
-import nu.rinu.test.HttpServerHandler
-import nu.rinu.test.Request
+import com.dreizak.util.testing.http.HttpServer
+import com.dreizak.util.testing.http.HttpServerHandler
+import com.dreizak.util.testing.http.Request
 
 /**
  * Base test for `Transport`s for load testing.
