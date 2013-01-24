@@ -10,7 +10,7 @@ object TgvBuild extends Build {
 
   lazy val buildSettings = Defaults.defaultSettings ++ multiJvmSettings ++ Seq(
     organization := "com.dreizak.tgv",
-    version := "1.0-SNAPSHOT",
+    version := "0.1-SNAPSHOT",
     scalaVersion := "2.10.0"
   )
   
