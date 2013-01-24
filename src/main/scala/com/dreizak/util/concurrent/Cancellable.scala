@@ -7,8 +7,7 @@ import scala.concurrent.Promise
  *
  * `Cancellable`s are thread-safe.
  *
- * `Cancellable`s are used in [[com.dreizak.util.concurrent.CancellableFuture]] and
- * [[com.dreizak.util.concurrent.CancellationToken]].
+ * `Cancellable`s are used in [[com.dreizak.util.concurrent.CancellableFuture]], for example.
  */
 trait Cancellable {
   /**
