@@ -44,8 +44,8 @@ class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
 
   override protected def create(handler: Client[HttpRequest]): Self = new AsyncHttpTransport(client, handler)
 
-  override def getBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.prepareGet(url), url)
-  override def postBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.preparePost(url), url)
+  override def getBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.prepareGet("")).withUrl(url)
+  override def postBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.preparePost("")).withUrl(url)
 
   def requestBuilder(r: HttpRequest): RequestBuilder = new HttpRequestBuilder(this, client.nativeClient.prepareRequest(r.httpRequest), r.httpRequest.getUrl)
 }
@@ -53,7 +53,8 @@ class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
 object AsyncHttpTransport extends Logging {
   private[sonatype] def asyncHttpHandler(client: StreamingAsyncHttpClient, maxSizeOfNonStreamingResponses: Long) =
     new Client[HttpRequest] {
-      def submit(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[HttpResponse] =
+      def submit(request: HttpRequest)(implicit context: SchedulingContext): CancellableFuture[HttpResponse] = {
+        logger.debug(s"HTTP request $request.")
         client.response(request.httpRequest, maxSizeOfNonStreamingResponses).
           // FIXME: test cancellation (download big file and cancel immediately)
           //          mapFailure(ex => ex match {
@@ -69,6 +70,7 @@ object AsyncHttpTransport extends Logging {
                 throw new HttpHeaderError(s"HTTP status ${status} indicates error.", status, Some(response))
               response
           }
+      }
     }
 
   def apply(client: StreamingAsyncHttpClient, maxSizeOfNonStreamingResponses: Long) = new AsyncHttpTransport(client, asyncHttpHandler(client, maxSizeOfNonStreamingResponses))

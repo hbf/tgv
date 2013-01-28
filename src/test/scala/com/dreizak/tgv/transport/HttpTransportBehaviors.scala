@@ -30,6 +30,14 @@ trait HttpTransportBehaviors {
 
   val transport: HttpTransport
 
+  def httpTransportRequests() = {
+    "create a new request builder from a given request" in {
+      val req = transport.getBuilder("http://www.foo.bar/?q=m").build
+      val copy = transport.requestBuilder(req).withQueryString(("p", "2")).build
+      copy.httpRequest.getUrl() must equal("http://www.foo.bar/?q=m&p=2")
+    }
+  }
+
   def httpTransport(maxSizeOfNonStreamingResponses: Long) = {
     "handle a simple GET request (not mocked)" in {
       val request = transport.getBuilder("http://www.wikipedia.com").build

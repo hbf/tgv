@@ -24,7 +24,7 @@ trait SignatureCalculator {
  */
 case class HttpRequestBuilder private[http] (private val transport: HttpTransport,
                                              private val nativeBuilder: AsyncHttpClient#BoundRequestBuilder,
-                                             val url: String,
+                                             val url: String = "",
                                              private val headers: Map[String, Seq[String]] = Map(),
                                              private val queryString: Map[String, Seq[String]] = Map(),
                                              private val backoffStrategy: Option[BackoffStrategy] = None,
@@ -37,7 +37,12 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
 
   def sign(calc: SignatureCalculator): HttpRequestBuilder = copy(calc = Some(calc))
 
-  def withUrl(url: String): HttpRequestBuilder = copy(url = url)
+  def withUrl(url: String): HttpRequestBuilder = {
+    nativeBuilder.setUrl(url)
+    val off = url.indexOf('?')
+    val urlWithoutQueryString = if (off > 0) url.substring(off) else url
+    copy(url = urlWithoutQueryString)
+  }
 
   def withAuth(username: String, password: String, scheme: AuthScheme): HttpRequestBuilder =
     copy(auth = Some((username, password, scheme)))
@@ -84,24 +89,24 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
     copy(retryStrategy = Some(strategy))
 
   def build() = {
-    nativeBuilder.setUrl(url)
+    val builder = nativeBuilder
     headers.foreach(header => header._2.
       foreach(value =>
-        nativeBuilder.addHeader(header._1, value)
+        builder.addHeader(header._1, value)
       ))
     for ((key, values) <- queryString; value <- values) {
-      nativeBuilder.addQueryParameter(key, value)
+      builder.addQueryParameter(key, value)
     }
-    _followRedirects.map(nativeBuilder.setFollowRedirects(_))
+    _followRedirects.map(builder.setFollowRedirects(_))
     timeout.map { t: Int =>
       val config = new PerRequestConfig()
       config.setRequestTimeoutInMs(t)
-      nativeBuilder.setPerRequestConfig(config)
+      builder.setPerRequestConfig(config)
     }
-    virtualHost.map { v => nativeBuilder.setVirtualHost(v) }
+    virtualHost.map { v => builder.setVirtualHost(v) }
     auth.map {
       case (username, password, scheme) =>
-        nativeBuilder.setRealm(new RealmBuilder()
+        builder.setRealm(new RealmBuilder()
           .setScheme(scheme)
           .setPrincipal(username)
           .setPassword(password)
@@ -109,6 +114,6 @@ case class HttpRequestBuilder private[http] (private val transport: HttpTranspor
           build())
     }
 
-    new HttpRequest(transport, backoffStrategy, retryStrategy, nativeBuilder.build())
+    new HttpRequest(transport, backoffStrategy, retryStrategy, builder.build())
   }
 }

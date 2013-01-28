@@ -17,5 +17,5 @@ final class HttpRequest(val transport: HttpTransport,
                         val httpRequest: com.ning.http.client.Request) extends TransportRequest {
   type Headers = HttpHeaders
 
-  override def toString() = httpRequest.getRawUrl
+  override def toString() = s"${httpRequest} with parameters ${httpRequest.getQueryParams} with backoff-strategy $backoffStrategy and retry-strategy $retryStrategy"
 }

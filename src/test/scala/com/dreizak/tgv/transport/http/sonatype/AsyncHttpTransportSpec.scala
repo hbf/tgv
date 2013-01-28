@@ -24,8 +24,9 @@ class AsyncHttpTransportSpec extends ServiceRegistryModule with WordSpec with Mu
   override val transport: HttpTransport = null
 
   "A Sontatype AsyncHttpClient transport" should {
-    //behave like httpTransport(MaxSizeOfNonStreamingResponses)
-    //behave like httpTransportWithTransforms()
+    behave like httpTransportRequests()
+    behave like httpTransport(MaxSizeOfNonStreamingResponses)
+    behave like httpTransportWithTransforms()
     behave like httpTransportUnderLoad()
   }
 }
