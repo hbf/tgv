@@ -58,7 +58,7 @@ object RetryStrategy {
     new RetryStrategy {
       def shouldRetry(cause: Throwable) = cause match {
         case _: CancelledException => false
-        case HttpHeaderError(_, status, _) if status < 400 || status >= 500 || status == 420 || status == 429 => true
+        case HttpHeaderError(_, status, _, _) if status < 400 || status >= 500 || status == 420 || status == 429 => true
         case NonFatal(_) => true
         case _ => false
       }

@@ -5,7 +5,7 @@ import com.dreizak.tgv.SchedulingContext
 import com.dreizak.util.concurrent.CancellableFuture
 import com.dreizak.tgv.transport.http.sonatype.HttpResponse
 
-case class HttpHeaderError(msg: String, httpStatus: Int, failingResponse: Option[HttpResponse] = None)
+case class HttpHeaderError(msg: String, httpStatus: Int, request: HttpRequest, failingResponse: Option[HttpResponse] = None)
   extends RuntimeException(msg + " (response: " + failingResponse.map(_.bodyAsString) + ")") with TransportHeaderError
 
 /**

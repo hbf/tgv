@@ -99,7 +99,7 @@ object AsyncHttpTransport extends Logging {
             case response: HttpResponse =>
               val status = response.headers.status
               if (status < 200 || status >= 300)
-                throw new HttpHeaderError(s"HTTP status ${status} indicates error.", status, Some(response))
+                throw new HttpHeaderError(s"HTTP status ${status} indicates error.", status, request, Some(response))
               response
           }
       }
