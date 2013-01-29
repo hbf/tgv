@@ -95,12 +95,7 @@ case class HttpRequestBuilder private[http] (private[http] val transport: HttpTr
   // additional values
   def withQueryString(parameters: (String, String)*): HttpRequestBuilder =
     copy(queryString = parameters.foldLeft(queryString) {
-      case (m, (k, v)) =>
-        {
-          val t = m + (k -> Seq(v))
-          println(t)
-          t
-        }
+      case (m, (k, v)) => m + (k -> Seq(v))
     })
 
   def addQueryString(parameters: (String, String)*): HttpRequestBuilder =
