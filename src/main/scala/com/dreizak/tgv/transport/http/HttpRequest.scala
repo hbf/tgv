@@ -14,6 +14,7 @@ import com.dreizak.tgv.transport.RetryStrategy
 final class HttpRequest(val transport: HttpTransport,
                         val backoffStrategy: Option[BackoffStrategy],
                         val retryStrategy: Option[RetryStrategy],
+                        val builder: HttpRequestBuilder,
                         val httpRequest: com.ning.http.client.Request) extends TransportRequest {
   type Headers = HttpHeaders
 

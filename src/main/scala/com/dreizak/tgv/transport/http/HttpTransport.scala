@@ -28,11 +28,11 @@ trait HttpTransport extends Transport[HttpRequest] {
   type Self = HttpTransport
   type RequestBuilder = HttpRequestBuilder
 
+  private[http] def nativeBuildRequest(requestBuilder: RequestBuilder): HttpRequest
+
   def getBuilder(url: String): RequestBuilder
   def postBuilder(url: String): RequestBuilder // TODO
   // TODO: other HTTP methods
-
-  def requestBuilder(r: HttpRequest): RequestBuilder
 
   /**
    * Submits a request to the underlying client, accumulating the response in memory and returning

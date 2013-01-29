@@ -31,10 +31,15 @@ trait HttpTransportBehaviors {
   val transport: HttpTransport
 
   def httpTransportRequests() = {
-    "create a new request builder from a given request" in {
+    "create a new request builder from a given request, with new parameters" in {
       val req = transport.getBuilder("http://www.foo.bar/?q=m").build
-      val copy = transport.requestBuilder(req).withQueryString(("p", "2")).build
+      val copy = req.builder.withQueryString(("p", "2")).build
       copy.httpRequest.getUrl() must equal("http://www.foo.bar/?q=m&p=2")
+    }
+    "create a new request builder from a given request, overwriting parameters" in {
+      val req = transport.getBuilder("http://www.foo.bar/?w=m").build
+      val copy = req.builder.withQueryString(("w", "m")).build
+      copy.httpRequest.getUrl() must equal("http://www.foo.bar/?w=m")
     }
   }
 

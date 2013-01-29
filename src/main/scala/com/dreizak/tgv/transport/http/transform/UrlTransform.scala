@@ -13,7 +13,7 @@ import com.weiglewilczek.slf4s.Logging
  */
 abstract class UrlTransform[Req <: HttpRequest] extends Transform[Req] {
   final override def apply(req: Req, client: Client[Req])(implicit context: SchedulingContext): CancellableFuture[(HttpHeaders, Array[Byte])] =
-    client.submit(req.transport.requestBuilder(req).withUrl(transformUrl(req.httpRequest.getUrl)).build.asInstanceOf[Req])
+    client.submit(req.builder.withUrl(transformUrl(req.httpRequest.getUrl)).build.asInstanceOf[Req])
 
   def transformUrl(url: String): String
 }

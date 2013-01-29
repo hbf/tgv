@@ -2,11 +2,13 @@ package com.dreizak.tgv.transport.http.sonatype
 
 import com.dreizak.tgv.SchedulingContext
 import com.dreizak.tgv.transport.{ Client }
-import com.dreizak.tgv.transport.http.{ HttpHeaders, HttpRequest, HttpRequestBuilder, HttpTransport }
+import com.dreizak.tgv.transport.http.{ HttpHeaders, HttpRequest, HttpRequestBuilder, HttpTransport, HttpMethod, Get, Post }
 import com.dreizak.util.concurrent.CancellableFuture
 import com.weiglewilczek.slf4s.Logging
 import com.dreizak.tgv.transport.Transport
 import com.ning.http.client.Response
+import com.ning.http.client.PerRequestConfig
+import com.ning.http.client.Realm.RealmBuilder
 import com.ning.http.client.AsyncHandler
 import com.ning.http.client.AsyncHandler.STATE
 import com.ning.http.client.HttpResponseBodyPart
@@ -44,10 +46,40 @@ class AsyncHttpTransport private[sonatype] (client: StreamingAsyncHttpClient,
 
   override protected def create(handler: Client[HttpRequest]): Self = new AsyncHttpTransport(client, handler)
 
-  override def getBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.prepareGet("")).withUrl(url)
-  override def postBuilder(url: String) = new HttpRequestBuilder(this, client.nativeClient.preparePost("")).withUrl(url)
+  override private[http] def nativeBuildRequest(builder: RequestBuilder) = {
+    val nativeBuilder = builder.method match {
+      case Get => client.nativeClient.prepareGet(builder.url)
+      case Post => client.nativeClient.preparePost(builder.url)
+    }
+    builder.headers.foreach(header => header._2.
+      foreach(value =>
+        nativeBuilder.addHeader(header._1, value)
+      ))
+    for ((key, values) <- builder.queryString; value <- values) {
+      nativeBuilder.addQueryParameter(key, value)
+    }
+    builder.shouldFollowRedirects.map(nativeBuilder.setFollowRedirects(_))
+    builder.timeout.map { t: Int =>
+      val config = new PerRequestConfig()
+      config.setRequestTimeoutInMs(t)
+      nativeBuilder.setPerRequestConfig(config)
+    }
+    builder.virtualHost.map { v => nativeBuilder.setVirtualHost(v) }
+    builder.auth.map {
+      case (username, password, scheme) =>
+        nativeBuilder.setRealm(new RealmBuilder()
+          .setScheme(scheme)
+          .setPrincipal(username)
+          .setPassword(password)
+          .setUsePreemptiveAuth(true).
+          build())
+    }
 
-  def requestBuilder(r: HttpRequest): RequestBuilder = new HttpRequestBuilder(this, client.nativeClient.prepareRequest(r.httpRequest), r.httpRequest.getUrl)
+    new HttpRequest(builder.transport, builder.backoffStrategy, builder.retryStrategy, builder, nativeBuilder.build())
+  }
+
+  override def getBuilder(url: String) = new HttpRequestBuilder(this).withUrl(url)
+  override def postBuilder(url: String) = new HttpRequestBuilder(this).withUrl(url)
 }
 
 object AsyncHttpTransport extends Logging {

@@ -40,6 +40,6 @@ object CredentialInjector {
   def injectCredentialAsGetParam[C, Req <: HttpRequest](provider: CredentialProvider[C], paramName: String) =
     new CredentialInjector[C, Req](provider) {
       override def embedCredential(req: Req, credential: C) =
-        req.transport.requestBuilder(req).withQueryString((paramName, credential.toString)).build.asInstanceOf[Req]
+        req.builder.withQueryString((paramName, credential.toString)).build.asInstanceOf[Req]
     }
 }
