@@ -50,6 +50,13 @@ trait HttpTransportBehaviors {
       response.headers.status must be(200)
       response.bodyAsString.toLowerCase must include("wikipedia")
     }
+    "hande a simple GET request with ZIP compression (not mocked)" in {
+      val request = transport.getBuilder("https://www.googleapis.com/customsearch/v1?cx=abc&q=foo&start=1").
+        withHeaders(("Accept-Encoding", "gzip"), ("User-Agent", "Google-HTTP-Java-Client/1.11.0-beta (gzip)")).
+        build
+      val thrown = evaluating { await(transport.body(request)) } must produce[HttpHeaderError]
+      thrown.failingResponse.get.bodyAsString must include("reason")
+    }
     "handle a simple GET request" in {
       when(handler.get(requestOf("/"))).thenReturn(Response(200, "yes"))
       val request = transport.getBuilder(server.url + "/").build

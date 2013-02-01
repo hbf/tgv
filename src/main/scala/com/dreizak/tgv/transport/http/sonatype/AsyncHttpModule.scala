@@ -29,6 +29,7 @@ class AsyncHttpModule extends AbstractModule with ScalaModule {
     new AsyncHttpClient(new Builder().
       setAllowPoolingConnection(allowPoolingConnection).
       setFollowRedirects(true).
+      setCompressionEnabled(true).
       // setMaximumConnectionsTotal(maxConnectionsTotal)  // #9
       build)
 }
