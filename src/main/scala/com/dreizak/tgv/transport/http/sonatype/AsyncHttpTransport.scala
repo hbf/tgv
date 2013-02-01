@@ -96,7 +96,8 @@ object AsyncHttpTransport extends Logging {
 
           // Any message with a non-2xx status code is a error
           map {
-            case response: HttpResponse =>
+            response =>
+              logger.trace(s"HTTP response: ${response.headers} and content (as text): ${response.bodyAsString}")
               val status = response.headers.status
               if (status < 200 || status >= 300)
                 throw new HttpHeaderError(s"HTTP status ${status} indicates error.", status, request, Some(response))
