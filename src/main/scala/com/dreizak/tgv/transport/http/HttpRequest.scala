@@ -7,6 +7,8 @@ import com.dreizak.tgv.transport.RetryStrategy
 /**
  * A request of a [[com.dreizak.tgv.transport.http.HttpTransport]].
  *
+ * TODO: `backoffStrategy` and `retryStrategy` are not supported currently (semantics is not clear yet)
+ *
  * == Implementation note ==
  * Currently, this is hard-coded to use <a href='https://github.com/sonatype/async-http-client'>Sonatype's AsyncHttpClient</a>;
  * this should be changed to allow other implementations to be used.

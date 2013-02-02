@@ -19,6 +19,11 @@ trait RetryStrategy {
   def shouldRetry(cause: Throwable): Boolean
 }
 
+/**
+ * TODO: document why this is useful (e.g., if too large an offset in a query service yields a 404)
+ */
+case class DontRetryException(msg: String, cause: Throwable = null) extends RuntimeException(msg, cause)
+
 object RetryStrategy {
   /**
    * A [[com.dreizak.tgv.transport.RetryStrategy]] that never retries.
@@ -31,7 +36,7 @@ object RetryStrategy {
 
   /**
    * A [[com.dreizak.tgv.transport.RetryStrategy]] that retries on non-fatal errors but <em>not</em>
-   * on [[com.dreizak.tgv.transport.TransportHeaderError]].
+   * on [[com.dreizak.tgv.transport.TransportHeaderError]] and `DontRetryExecption`s.
    *
    * Notice that this class does not retry on `CancelledException`s.
    */
@@ -39,6 +44,7 @@ object RetryStrategy {
     new RetryStrategy {
       def shouldRetry(cause: Throwable) = cause match {
         case _: CancelledException => false
+        case _: DontRetryException => false
         case _: TransportHeaderError => false
         case NonFatal(_) => true
         case _ => false
@@ -48,9 +54,10 @@ object RetryStrategy {
 
   /**
    * A [[com.dreizak.tgv.transport.RetryStrategy]] that retries on non-fatal errors and
-   * any [[com.dreizak.tgv.transport.TransportHeaderError]] except (most) 4xx (client error) status.
+   * any [[com.dreizak.tgv.transport.TransportHeaderError]] except (most) 4xx (client error) status
+   * and `DontRetryExecption`s.
    *
-   * We say most because some 4xx (client error) codes, as <a href='http://en.wikipedia.org/wiki/List_of_HTTP_status_codes'>listed
+   * We say "most" because some 4xx (client error) codes, as <a href='http://en.wikipedia.org/wiki/List_of_HTTP_status_codes'>listed
    * on Wikipedia</a>, do seem to have a chance of success on retry. Currently, the following 4xx codes <em>will</em>
    * be retried: 420, 429.
    */
@@ -58,6 +65,7 @@ object RetryStrategy {
     new RetryStrategy {
       def shouldRetry(cause: Throwable) = cause match {
         case _: CancelledException => false
+        case _: DontRetryException => false
         case HttpHeaderError(_, status, _, _) if status < 400 || status >= 500 || status == 420 || status == 429 => true
         case NonFatal(_) => true
         case _ => false

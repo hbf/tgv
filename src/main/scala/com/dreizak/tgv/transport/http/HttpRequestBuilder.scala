@@ -23,6 +23,7 @@ case object Post extends HttpMethod
  *
  * TODO: support passing a request body (both iteratee/enumerator- and stream-based)
  * TODO: cookie support
+ * TODO: `withBackoffStrategy` and `withRetryStrategy` are not supported currently (semantics is not clear yet)
  *
  * == Implementation notes ==
  * When you call a `AsyncHttpClient#BoundRequestBuilder`'s `setUrl` method with a URL containing GET query
