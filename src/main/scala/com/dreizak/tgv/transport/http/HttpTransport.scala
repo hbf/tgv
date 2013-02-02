@@ -3,7 +3,8 @@ package com.dreizak.tgv.transport.http
 import com.dreizak.tgv.transport.{ Transport, TransportHeaderError }
 import com.dreizak.tgv.SchedulingContext
 import com.dreizak.util.concurrent.CancellableFuture
-import com.dreizak.tgv.transport.http.sonatype.HttpResponse
+import com.dreizak.tgv.transport.transform.InMemoryTransform
+import com.dreizak.tgv.transport.Client
 
 case class HttpHeaderError(msg: String, httpStatus: Int, request: HttpRequest, failingResponse: Option[HttpResponse] = None)
   extends RuntimeException(msg + " (response: " + failingResponse.map(_.bodyAsString) + ")") with TransportHeaderError

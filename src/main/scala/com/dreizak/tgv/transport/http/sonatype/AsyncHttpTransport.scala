@@ -16,6 +16,7 @@ import com.ning.http.client.HttpResponseStatus
 import com.ning.http.client.HttpResponseHeaders
 import com.ning.http.client.AsyncCompletionHandler
 import com.dreizak.tgv.transport.http.HttpHeaderError
+import com.dreizak.tgv.transport.http.HttpResponse
 
 /**
  * A [[com.dreizak.tgv.transport.Transport]] implementation for the HTTP protocol that uses

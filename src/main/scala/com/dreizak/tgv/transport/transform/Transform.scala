@@ -11,7 +11,8 @@ import com.dreizak.tgv.SchedulingContext
  *
  * TODO: this is likely to change when streaming gets implemented; to be on the safe (safer) side,
  * implementations <em>may</em> alter the request but should not rely on a response being available
- * (which would require reading it as a whole into memory and thus contradict streaming)
+ * (which would require reading it as a whole into memory and thus contradict streaming).
+ * Use `InMemoryTransform` if you read non-constant amounts of the response into memory.
  */
 trait Transform[Req <: TransportRequest] {
   type Headers = Req#Headers
@@ -24,6 +25,10 @@ trait Transform[Req <: TransportRequest] {
         def submit(request: Req)(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] = other.apply(request, client)
       })
   }
+}
+
+trait InMemoryTransform[Req <: TransportRequest] extends Transform[Req] {
+  def apply(req: Req, client: Client[Req])(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])]
 }
 
 object Transform {

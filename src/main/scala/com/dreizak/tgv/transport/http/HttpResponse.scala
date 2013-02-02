@@ -1,8 +1,6 @@
-package com.dreizak.tgv.transport.http.sonatype
+package com.dreizak.tgv.transport.http
 
-import com.dreizak.tgv.transport.http.HttpHeaders
 import java.nio.charset.Charset
-import com.google.common.base.Charsets
 
 /**
  * HTTP response holding both the headers and the response body in memory.
@@ -13,4 +11,8 @@ import com.google.common.base.Charsets
 class HttpResponse(val headers: HttpHeaders, val body: Array[Byte]) extends (HttpHeaders, Array[Byte])(headers, body) {
   def bodyAsString(charset: Charset) = new String(body, charset)
   def bodyAsString() = new String(body, headers.charset())
+}
+
+object HttpResponse {
+  def toHttpResponse(response: (HttpHeaders, Array[Byte])) = new HttpResponse(response._1, response._2)
 }

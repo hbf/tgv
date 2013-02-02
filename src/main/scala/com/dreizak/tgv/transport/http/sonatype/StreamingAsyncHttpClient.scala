@@ -15,6 +15,7 @@ import com.dreizak.util.concurrent.CancellableFuture
 import com.dreizak.tgv.transport.http.HttpHeaders
 import com.ning.http.client.Response
 import com.ning.http.client.AsyncHandler.STATE
+import com.dreizak.tgv.transport.http.HttpResponse
 
 case class HttpInMemoryResponseTooLarge(url: String)  extends RuntimeException(s"Response too long; use the streaming API to fetch URL ${url}.")
 
