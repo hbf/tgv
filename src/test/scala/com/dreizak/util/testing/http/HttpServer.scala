@@ -35,12 +35,12 @@ class HttpServer(port: Int, var handler: HttpServerHandler = null) {
       if (res != null) {
         logger.debug("response: %d".format(res.statusCode))
 
-        response.setCharacterEncoding("UTF-8") // KF: added
-        response.getWriter.append(res.body)
-        response.setStatus(res.statusCode)
         for (h <- res.headers) {
           response.addHeader(h._1, h._2)
         }
+        response.setCharacterEncoding("UTF-8") // KF: added
+        response.getWriter.append(res.body)
+        response.setStatus(res.statusCode)
 
         baseRequest.setHandled(true)
       } else {
