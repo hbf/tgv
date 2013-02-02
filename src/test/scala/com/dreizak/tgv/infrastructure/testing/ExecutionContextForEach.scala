@@ -9,7 +9,7 @@ import com.dreizak.tgv.{ ExecutionContextService, SchedulingContext }
 trait ExecutionContextForEach extends BeforeAndAfterEach {
   self: Suite =>
 
-  val threadPoolSize = 10
+  val threadPoolSize = Runtime.getRuntime.availableProcessors
   private var service: ExecutionContextService = _
 
   implicit var executionContext: SchedulingContext = _
