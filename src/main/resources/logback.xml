@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <appender name="Stdout" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%-5p - %-36.36c{1} - %m\n</pattern>
+    </encoder>
+  </appender>
+  <appender name="rollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <!--See also http://logback.qos.ch/manual/appenders.html#RollingFileAppender-->
+    <File>tgv.log</File>
+    <encoder>
+      <pattern>%-5p - %-36.36c{1} - %m\n</pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+      <maxIndex>2</maxIndex>
+      <FileNamePattern>tgv.log.%i</FileNamePattern>
+    </rollingPolicy>
+    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+      <MaxFileSize>50MB</MaxFileSize>
+    </triggeringPolicy>
+  </appender>
+  <logger name="com.dreizak.tgv" level="info"/>
+  <root level="INFO">
+    <appender-ref ref="Stdout"/>
+    <appender-ref ref="rollingFile"/>
+  </root>
+</configuration>
