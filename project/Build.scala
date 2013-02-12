@@ -89,7 +89,7 @@ object TgvBuild extends Build {
     
     object Test {
       val junit                = "junit"                       % "junit"                                % "4.10"                    % "test"
-      val scalaTest            = "org.scalatest"               % "scalatest_2.10.0-RC3"                 % "2.0.M5-B1"                  % "test"
+      val scalaTest            = "org.scalatest"               %% "scalatest"                           % "2.0.M5b"                 % "test"
       val mockito              = "org.mockito"                 % "mockito-all"                          % "1.9.0"                   % "test"
       val jmock                = "org.jmock"                   % "jmock"                                % "2.5.1"                   % "test" // for deterministic scheduler tests
       val junitIntf            = "com.novocode"                % "junit-interface"                      % "0.8"                     % "test"
