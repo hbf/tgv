@@ -327,6 +327,18 @@ object CancellableFuture {
   }
 
   /**
+   * Returns a `CancellableFuture` to the result of the last future in the list that is completed.
+   */
+  def lastCompletedOf[T](futures: TraversableOnce[CancellableFuture[T]])(implicit executor: ExecutionContext): CancellableFuture[T] = {
+    val p = Promise[T]()
+
+    val completeFirst: Try[T] => Unit = p tryComplete _
+    futures.foreach(_.future onComplete completeFirst)
+
+    cancellable(p).onCancellation(cause => futures.foreach(_.cancel(cause)))
+  }
+
+  /**
    * Short-hand for `Await.result(f.future, timeout)`.
    */
   def await[T](f: CancellableFuture[T])(implicit timeout: Duration): T = Await.result(f.future, timeout)
