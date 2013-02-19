@@ -14,7 +14,7 @@ Even though TGV does come with unit tests, not all edge cases have been tested w
 
 ## Example, please!
 
-Here is a short sample applications that downloads the body of some Wikipedia pages using throttling:
+Here is a short [sample applications](https://github.com/hbf/tgv/blob/master/src/test/scala/com/dreizak/tgv/SampleApp.scala) that downloads the body of some Wikipedia pages using throttling:
 
 ```scala
 object SampleApp extends App {
