@@ -33,7 +33,7 @@ private[transport] class Throttling[Req <: TransportRequest](rate: Rate, handler
     // The future that will be ready when we can execute our request
     val throttled = throttler.throttle()
 
-    throttled.cancellableFlatMap(receipt => {
+    throttled.flatMap(receipt => {
       handler.submit(request).
         // Note: we absolutely must call `receipt.completed()`, even in case of fatal exceptions.
         andThen {

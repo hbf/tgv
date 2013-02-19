@@ -107,5 +107,5 @@ object AsyncHttpTransport extends Logging {
       }
     }
 
-  def apply(client: StreamingAsyncHttpClient, maxSizeOfNonStreamingResponses: Long) = new AsyncHttpTransport(client, asyncHttpHandler(client, maxSizeOfNonStreamingResponses))
+  def apply(client: StreamingAsyncHttpClient, maxSizeOfNonStreamingResponses: Long = 50 * 1024 * 1024) = new AsyncHttpTransport(client, asyncHttpHandler(client, maxSizeOfNonStreamingResponses))
 }

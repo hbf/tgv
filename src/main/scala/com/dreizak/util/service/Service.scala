@@ -11,14 +11,14 @@ trait Service {
    *
    * This method has no effect if `isRunning` is already `true`.
    */
-  def start()
+  def start(): this.type
 
   /**
    * Stops the service.
    *
    * This method has no effect if `isRunning` is already `false`.
    */
-  def stop()
+  def stop(): this.type
 
   /**
    * True iff `start` has been called (and `stop` was not invoked in the meantime).

@@ -132,10 +132,10 @@ trait CancellableFuture[+T] extends Cancellable {
   def map[S](f: T => S)(implicit executor: ExecutionContext): CancellableFuture[S] =
     wrap(future.map(f)(executor))
 
-  def flatMap[S](f: T => Future[S])(implicit executor: ExecutionContext): CancellableFuture[S] =
+  def simpleFlatMap[S](f: T => Future[S])(implicit executor: ExecutionContext): CancellableFuture[S] =
     wrap(future.flatMap(f)(executor))
 
-  def cancellableFlatMap[S](f: T => CancellableFuture[S])(implicit executor: ExecutionContext): CancellableFuture[S] =
+  def flatMap[S](f: T => CancellableFuture[S])(implicit executor: ExecutionContext): CancellableFuture[S] =
     // Code taken from Scala source, modified appropriately.
     {
       val p = Promise[S]()
@@ -326,16 +326,10 @@ object CancellableFuture {
     cancellable(promise).onCancellation(cause => receipt.cancel(true))
   }
 
-  /**
-   * Returns a `CancellableFuture` to the result of the last future in the list that is completed.
-   */
-  def lastCompletedOf[T](futures: TraversableOnce[CancellableFuture[T]])(implicit executor: ExecutionContext): CancellableFuture[T] = {
-    val p = Promise[T]()
-
-    val completeFirst: Try[T] => Unit = p tryComplete _
-    futures.foreach(_.future onComplete completeFirst)
-
-    cancellable(p).onCancellation(cause => futures.foreach(_.cancel(cause)))
+  def sequence[A, M[_] <: TraversableOnce[_]](in: M[CancellableFuture[A]])(implicit cbf: CanBuildFrom[M[CancellableFuture[A]], A, M[A]], executor: ExecutionContext): CancellableFuture[M[A]] = {
+    in.foldLeft(successful(cbf(in))) {
+      (fr, fa) => for (r <- fr; a <- fa.asInstanceOf[CancellableFuture[A]]) yield (r += a)
+    } map (_.result)
   }
 
   /**

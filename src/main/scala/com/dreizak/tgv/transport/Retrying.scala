@@ -27,7 +27,7 @@ private[transport] class Retrying[Req <: TransportRequest](retryStrategy: RetryS
     client.submit(request).cancellableRecoverWith {
       case cause if retryStrategy.shouldRetry(cause) && backoffStrategy.escalate().shouldRetry =>
         logger.info(s"Request ${request} failed, retrying (retry strategy: ${retryStrategy}; back-off strategy: ${backoffStrategy}).")
-        delay(backoffStrategy.delay).cancellableFlatMap(_ => forward(client, request, backoffStrategy.escalate()))
+        delay(backoffStrategy.delay).flatMap(_ => forward(client, request, backoffStrategy.escalate()))
     }
   }
 }

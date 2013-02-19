@@ -64,12 +64,14 @@ class ExecutionContextService(threadPoolSize: Int) extends Service {
       override def scheduleAtFixedRate(r: Runnable, l: Long, ll: Long, u: TimeUnit): ScheduledFuture[_] = service.scheduleAtFixedRate(r, l, ll, u)
       override def scheduleWithFixedDelay(r: Runnable, l: Long, ll: Long, u: TimeUnit): ScheduledFuture[_] = service.scheduleWithFixedDelay(r, l, ll, u)
     }
+    this
   }
 
   override def stop() = {
     executionContext.shutdown()
     executionContext.awaitTermination(shutdownTimeout.toSeconds, TimeUnit.SECONDS)
     executionContext = null
+    this
   }
 
   override def isRunning: Boolean = executionContext != null

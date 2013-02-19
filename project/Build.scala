@@ -20,6 +20,7 @@ object TgvBuild extends Build {
     settings = buildSettings ++
       Seq(libraryDependencies ++= Dependencies.Tgv) ++
       Seq(
+        //scalacOptions += "-Xprint:typer",
         EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource,
         EclipseKeys.withSource := true,
         EclipseKeys.configurations := Set(Compile, Test, MultiJvm),

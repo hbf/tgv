@@ -1,13 +1,13 @@
 package com.dreizak.util.concurrent
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ Future, Promise }
 import scala.concurrent.duration.DurationInt
 import org.junit.runner.RunWith
 import org.scalatest.WordSpec
 import org.scalatest.matchers.MustMatchers
 import com.dreizak.tgv.infrastructure.testing.ExecutionContextForEach
 import com.dreizak.tgv.infrastructure.testing.TestingUtils.await
-import com.dreizak.util.concurrent.CancellableFuture.{cancellable, delay}
+import com.dreizak.util.concurrent.CancellableFuture.{ cancellable, delay }
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
@@ -111,7 +111,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
       val p = Promise[String]()
       val f1 = cancellable(p)
       val p2 = Promise[Int]
-      val f = f1 flatMap { (str: String) => Future(str.length) }
+      val f = f1 simpleFlatMap { (str: String) => Future(str.length) }
       p.isCompleted must be(false)
       p.success("Hi, Huck!")
       p.isCompleted must be(true)
@@ -121,7 +121,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
       val p = Promise[String]()
       val f1 = cancellable(p)
       val p2 = Promise[Int]
-      val f = f1 flatMap { (str: String) => Future(str.length) }
+      val f = f1 simpleFlatMap { (str: String) => Future(str.length) }
       val failure = new IllegalStateException("oops")
       p.isCompleted must be(false)
       p.failure(failure)
@@ -133,7 +133,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
       val p = Promise[String]()
       val f1 = cancellable(p)
       val p2 = Promise[Int]
-      val f = f1 flatMap { (str: String) => Future(str.length) }
+      val f = f1 simpleFlatMap { (str: String) => Future(str.length) }
       p.isCompleted must be(false)
       val reason = new CancelledException("oops")
       f.cancel(reason)
@@ -145,7 +145,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
       val p = Promise[String]()
       val f1 = cancellable(p)
       val p2 = Promise[Int]
-      val f = f1 flatMap { (str: String) => Future(str.length) }
+      val f = f1 simpleFlatMap { (str: String) => Future(str.length) }
       p.isCompleted must be(false)
       val reason = new IllegalStateException("oops")
       f.cancel(reason)
@@ -158,7 +158,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
       val p = Promise[String]()
       val f1 = cancellable(p)
       val p2 = Promise[Int]
-      val f = f1 flatMap { (str: String) => Future(str.length) }
+      val f = f1 simpleFlatMap { (str: String) => Future(str.length) }
       p.isCompleted must be(false)
       val reason = new CancelledException("oops")
       f1.cancel(reason)
@@ -182,7 +182,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
     "not cancel an intermediate ordinary future (in flatMap)" in {
       val f1 = TestFuture("foo")
       val f2 = TestFuture(3)
-      val f = f1.cancellableFuture flatMap { (str: String) => f2.future }
+      val f = f1.cancellableFuture simpleFlatMap { (str: String) => f2.future }
       f1.completed must be(false)
       f2.completed must be(false)
       f.future.isCompleted must be(false)
@@ -201,7 +201,7 @@ class CancellableFutureSpec extends WordSpec with MustMatchers with ExecutionCon
     "cancel an intermediate cancellable future (in flatMap)" in {
       val f1 = TestFuture("foo")
       val f2 = TestFuture(3)
-      val f = f1.cancellableFuture cancellableFlatMap { (str: String) => f2.cancellableFuture }
+      val f = f1.cancellableFuture flatMap { (str: String) => f2.cancellableFuture }
       f1.completed must be(false)
       f2.completed must be(false)
       f.future.isCompleted must be(false)

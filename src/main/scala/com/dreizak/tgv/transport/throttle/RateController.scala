@@ -237,9 +237,11 @@ final class RateController(rate: Rate,
     val result = cancellable(promise)
 
     if (outstanding == rate.numberOfTasks) {
+      logger.debug(s"Need to enqueue task until one of ${rate.numberOfTasks} outstanding tasks completes.")
       indeterminates = indeterminates.enqueue(promise)
     } else {
       val nextEarliest = earliestStartTime(now)
+      logger.debug(s"Scheduling task for time ${nextEarliest} (i.e., in ${nextEarliest - now}).")
       val receipt = Receipt(nextEarliest)
       schedule = receipt :: schedule
       outstanding = outstanding + 1

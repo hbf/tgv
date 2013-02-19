@@ -13,7 +13,7 @@ import com.dreizak.tgv.transport.http.HttpRequest
 // TODO document (and test): only expires the credential in case of ?! #32
 abstract class CredentialInjector[C, Req <: TransportRequest](provider: CredentialProvider[C]) extends Transform[Req] with Logging {
   def apply(req: Req, client: Client[Req])(implicit context: SchedulingContext): CancellableFuture[(Headers, Array[Byte])] = {
-    provider.get().cancellableFlatMap { credential =>
+    provider.get().flatMap { credential =>
 
       // Embed credential (in URL or as header, for example)
       val transformedReq = embedCredential(req, credential)
