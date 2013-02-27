@@ -63,7 +63,7 @@ object TgvBuild extends Build {
     val slf4s                  = "com.weiglewilczek.slf4s"     % "slf4s_2.9.1"                          % "1.0.7"
     
     //========================== Utilities ==============================================================================================================================
-    val guava                  = "com.google.guava"            % "guava"                                % "13.0.1"
+    val guava                  = "com.google.guava"            % "guava"                                % "14.0"
     val jsr305ForGuava         = "com.google.code.findbugs"    % "jsr305"                               % "1.3.9"
   
     //========================== Dependency injection ===================================================================================================================  
