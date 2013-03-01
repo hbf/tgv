@@ -60,7 +60,6 @@ object TgvBuild extends Build {
     //val log4j                = "log4j"                       % "log4j"                                % "1.2.16"
     val slf4j                  = "org.slf4j"                   % "slf4j-api"                            % "1.6.6"
     val slf4jlog4j             = "org.slf4j"                   % "slf4j-log4j12"                        % "1.6.6"
-    val slf4s                  = "com.weiglewilczek.slf4s"     % "slf4s_2.9.1"                          % "1.0.7"
     
     //========================== Utilities ==============================================================================================================================
     val guava                  = "com.google.guava"            % "guava"                                % "14.0"
@@ -97,6 +96,6 @@ object TgvBuild extends Build {
       val jetty                = "org.eclipse.jetty"           % "jetty-server"                         % "8.1.0.v20120127"         % "test"
     }
 
-    val Tgv = Seq(logback, slf4jlog4j, slf4s, guava, jsr305ForGuava, scalaGuice, rocoto, iteratees, asyncHttpClient, commonsLang, Test.junit, Test.scalaTest, Test.mockito, Test.jmock, /*Test.junitIntf,*/ Test.jetty)
+    val Tgv = Seq(logback, slf4jlog4j, guava, jsr305ForGuava, scalaGuice, rocoto, iteratees, asyncHttpClient, commonsLang, Test.junit, Test.scalaTest, Test.mockito, Test.jmock, /*Test.junitIntf,*/ Test.jetty)
   }
 }
