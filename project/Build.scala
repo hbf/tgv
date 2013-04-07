@@ -77,7 +77,7 @@ object TgvBuild extends Build {
     //========================== Caching ================================================================================================================================  
   
     //========================== HTTP ===================================================================================================================================
-    val asyncHttpClient        = "com.ning"                    % "async-http-client"                    % "1.8.0-SNAPSHOT"
+    val asyncHttpClient        = "com.ning"                    % "async-http-client"                    % "1.8.0-SNAPSHOT" exclude("org.slf4j", "slf4j-api")
     val commonsLang            = "commons-lang"                % "commons-lang"                         % "2.6"
     //val gson                   = "com.google.code.gson"        % "gson"                                 % "2.2.2"
     //val xom                    = "xom"                         % "xom"                                  % "1.2.5"
