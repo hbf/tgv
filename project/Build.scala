@@ -65,8 +65,10 @@ object TgvBuild extends Build {
     val guava                  = "com.google.guava"            % "guava"                                % "11.0.1"
     val jsr305ForGuava         = "com.google.code.findbugs"    % "jsr305"                               % "1.3.9"
   
-    //========================== Dependency injection ===================================================================================================================  
-    val scalaGuice             = "net.codingwell"              %% "scala-guice"                         % "3.0.2"
+    //========================== Dependency injection ===================================================================================================================
+    // Note: users of TGV will often use ASM version 4.x, so we exclude the one that comes with Guice here.
+    val scalaGuice             = "net.codingwell"              %% "scala-guice"                         % "3.0.2" exclude("asm", "asm")
+    val replacementAsm         = "org.ow2.asm"                 % "asm-all"                              % "4.0"
     
     //========================== Configuration ==========================================================================================================================  
     val rocoto                 = "org.99soft.guice"            % "rocoto"                               % "6.1"
@@ -96,6 +98,6 @@ object TgvBuild extends Build {
       val jetty                = "org.eclipse.jetty"           % "jetty-server"                         % "8.1.0.v20120127"         % "test"
     }
 
-    val Tgv = Seq(logback, guava, jsr305ForGuava, scalaGuice, rocoto, iteratees, asyncHttpClient, commonsLang, Test.junit, Test.scalaTest, Test.mockito, Test.jmock, /*Test.junitIntf,*/ Test.jetty)
+    val Tgv = Seq(logback, guava, jsr305ForGuava, scalaGuice, replacementAsm, rocoto, iteratees, asyncHttpClient, commonsLang, Test.junit, Test.scalaTest, Test.mockito, Test.jmock, /*Test.junitIntf,*/ Test.jetty)
   }
 }
