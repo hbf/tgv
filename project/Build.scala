@@ -82,7 +82,7 @@ object TgvBuild extends Build {
     val asyncHttpClient        = "com.ning"                    % "async-http-client"                    % "1.8.0-SNAPSHOT" exclude("org.slf4j", "slf4j-api")
     val commonsLang            = "commons-lang"                % "commons-lang"                         % "2.6"
     //val gson                   = "com.google.code.gson"        % "gson"                                 % "2.2.2"
-    //val xom                    = "xom"                         % "xom"                                  % "1.2.5"
+    //val xom                    = "xom"                         % "xom"                                  % "1.2.9"
     //val json4s                 = "org.json4s"                  % "json4s-native_2.10.0-RC3"             % "3.1.0-SNAPSHOT"
     //val json4sJackson          = "org.json4s"                  % "json4s-jackson_2.10.0-RC3"            % "3.1.0-SNAPSHOT"
     //val scalesXml              = "org.scalesxml"               % "scales-xml_2.10.0-RC2"                % "0.4.4"
