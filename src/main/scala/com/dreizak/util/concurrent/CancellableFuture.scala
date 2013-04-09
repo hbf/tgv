@@ -20,34 +20,9 @@ import scala.collection.generic.CanBuildFrom
  * use the `onCancellation` construct to register a callback to be invoked when the future is cancelled.
  * The actual abort of the task represented by the future is up to the implementation.
  *
- * TODO: following needs updating and reviewing
- *
- *  - The companion object's `cancellable(p)` factory method provides an implementation that  simply fails the given promise `p`
- *    with the cause `t` of the `cancel(t)` cancellation.
- *  - Alternatlvely, you can use the `cancellable(f) { op }` factory method of the `CancellableFuture` companion, which
- *    takes a future `f` and a cancellation operation `op`; the latter will be exectured (at most once) when the
- *    future returned by `cancellable(f) { op }` is cancelled.
- *
- * For example, imagine you want to execute a task with a delay, by scheduling on a Java `ScheduledExecutorService`,
- * and want its result to be available in form of a `CancellableFuture`:
- *
- * {{{
- *   // TODO: check whether this is still up-to-date
- *   val promise = Promise[Result]()
- *   val receipt: ScheduledFuture[Result] = scheduler.schedule(
- *     new Callable[Result]() {
- *       override def call(): Result = {
- *         // Note: example ignores failure handling (`promise.faulure(...)`).
- *         promise.trySuccess(...) // Note: don't use `success`.
- *       }
- *     }, 10, TimeUnit.SECONDS)
- *   val f = cancellable(promise)
- * }}}
- *
  * Notice that you should use `promise.trySuccess` and not `promise.success` because
- * both the updater of the future (in this case the scheduled task) and a potential
- * canceller are both "competing" for completing the promise. (`cancellable` uses
- * `tryFailure` internally.)
+ * both the updater of the future and a potential canceller are both "competing" for
+ * completing the promise. (`cancellable` uses `tryFailure` internally.)
  *
  * The cancellation flows in the opposite direction of values and is propagated
  * by combinators like `map`, `flatMap`, etc. For example, in
