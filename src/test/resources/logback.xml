@@ -19,12 +19,12 @@
       <MaxFileSize>50MB</MaxFileSize>
     </triggeringPolicy>
   </appender>
-  <logger name="com.dreizak.tgv.transport.http.sonatype" level="debug"/>
   <logger name="com.dreizak.tgv" level="info"/>
-  <logger name="com.ning.http.client.providers.netty.NettyConnectionsPool" level='trace'/>
   <!-- 
   <logger name='com.dreizak.tgv.transport.throttle' level="debug"/>
   <logger name="com.dreizak.tgv.transport.http.sonatype" level="trace"/>
+  <logger name="com.dreizak.tgv.transport.http.sonatype" level="debug"/>
+  <logger name="com.ning.http.client.providers.netty.NettyConnectionsPool" level='trace'/>
   -->
   <root level="INFO">
     <appender-ref ref="Stdout"/>
