@@ -57,3 +57,23 @@ object SampleApp extends App {
   println("Shut down.")
 }
 ```
+
+## Deploy to your own Maven repository
+
+If you want `sbt publish` to deploy the library `jar`, its sources and API documentation to deploy to your in-house Maven repository, follow these steps:
+
+ 1. Create, inside the project directory (and thus next to this `README.md` file) a file called `local.sbt` with content:
+ 
+        publishTo := Some("My Repository" at "http://repo.my.com/some/path/")
+        credentials += Credentials(Path.userHome / ".ivy2" / ".my-credentials")
+        
+    (Adapt the URL and file name `.my-credentials`.)
+
+ 1. Create a file `~/.ivy2/.my-credentials` and store the login and password to your repository in there. For a [Sonatype Nexus](http://www.sonatype.org/nexus/) repository, this should look something like this:
+ 
+        realm=Sonatype Nexus Repository Manager
+        host=repo.my.com
+        user=myname
+        password=mypassword
+        
+After this, you can do a `sbt publish` to deploy the library.
