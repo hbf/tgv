@@ -65,6 +65,7 @@ If you want `sbt publish` to deploy the library `jar`, its sources and API docum
  1. Create, inside the project directory (and thus next to this `README.md` file) a file called `local.sbt` with content:
  
         publishTo := Some("My Repository" at "http://repo.my.com/some/path/")
+        
         credentials += Credentials(Path.userHome / ".ivy2" / ".my-credentials")
         
     (Adapt the URL and file name `.my-credentials`.)
